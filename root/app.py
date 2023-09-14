@@ -60,3 +60,4 @@ def stock_info():
 # print(dir(yf.Ticker('9988.hk')))
 # print('-'*8)
 # print(yf.Ticker('9988.hk').financials)
+# print('test:', yf.Ticker('80011.hk').info['currentPrice'])
