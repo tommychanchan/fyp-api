@@ -31,7 +31,8 @@ def index():
 # 3: stock id not found
 @app.route('/stock_info', methods=['POST'])
 def stock_info():
-    data = [s.upper() for s in request.json]
+    json_data = request.json
+    data = [s.upper() for s in json_data['stocks']]
     # data: a list of stock names (uppercase)
 
     if len(data) == 0:
@@ -59,5 +60,5 @@ def stock_info():
 #debug
 # print(dir(yf.Ticker('9988.hk')))
 # print('-'*8)
-# print(yf.Ticker('9988.hk').financials)
+# print(yf.Ticker('9988.hk').info)
 # print('test:', yf.Ticker('80011.hk').info['currentPrice'])
