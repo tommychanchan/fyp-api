@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return "You should not go here :("
+    return 'You should not go here :('
 
 
 
@@ -46,11 +46,13 @@ def stock_info():
     for stock_name in data:
         try:
             return_list.append(tickers.tickers[stock_name].info)
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.ConnectionError as e:
+            print(e)
             return_list.append({
                 'error': 2,
             })
-        except requests.exceptions.HTTPError:
+        except requests.exceptions.HTTPError as e:
+            print(e)
             return_list.append({
                 'error': 3,
             })
