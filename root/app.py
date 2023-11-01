@@ -34,11 +34,12 @@ def index():
 
 # for api test
 # localhost:5000/stock_info
-# {"stocks": ["9988.hk"]}
+# {"stocks": ["9988.hk", "0008.hk"]}
 @app.route('/stock_info', methods=['POST'])
 def stock_info():
     json_data = request.json
-    data = [yf_to_aa(s) for s in json_data['stocks']]
+    symbols = json_data['stocks']
+    data = [yf_to_aa(s) for s in symbols]
 
 
     if len(data) == 0:
@@ -48,7 +49,7 @@ def stock_info():
 
     return_list = []
 
-    for stock_name in data:
+    for stock_name, symbol in zip(data, symbols):
         url = f'http://www.aastocks.com/tc/stocks/quote/detail-quote.aspx?symbol={stock_name}'
         headers = {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
@@ -69,8 +70,39 @@ def stock_info():
             soup = BeautifulSoup(result, features='html.parser')
             try:
                 current_price = float(soup.find('div', {'id': 'labelLast'}).text.strip())
+                
+                prev_close_price, open_price = (float(x.strip()) for x in soup.find('div', {'id': 'valPrevClose'}).text.split('/'))
+                
+                day_low, day_high = (float(x.strip()) for x in soup.find('div', {'id': 'valRange'}).text.split('-'))
+                
+                stock_number_per_hand = int(soup.find('div', string='每手股數').parent.find('div', {'class': 'float_r'}).text.strip())
+                
+                earnings_per_share = float(soup.find('div', {'data-key': 'EPS'}).parent.parent.find('div', {'class': 'float_r'}).text.strip())
+                
+                price_to_earnings_ratio, price_to_earnings_ratio_ttm = (float_or_none(x.strip()) for x in soup.find('div', {'id': 'tbPERatio'}).find('div', {'class': 'float_r'}).text.split('/'))
+                
+                temp = soup.find('div', {'data-key': 'Dividend Yield'}).parent.parent.parent.find('div', {'class': 'float_r'}).text
+                if 'N/A' in temp:
+                    dividend_yield = None
+                    dividend_yield_ttm = None
+                else:
+                    dividend_yield, dividend_yield_ttm = (float(x.strip().strip('%')) / 100 for x in temp.split('/'))
+                
+
+                
                 return_list.append({
+                    'symbol': symbol,
                     'currentPrice': current_price,
+                    'previousClose': prev_close_price,
+                    'open': open_price,
+                    'dayLow': day_low,
+                    'dayHigh': day_high,
+                    'stockNumberPerHand': stock_number_per_hand,
+                    'earningsPerShare': earnings_per_share,
+                    'priceToEarningsRatio': price_to_earnings_ratio,
+                    'priceToEarningsRatioTTM': price_to_earnings_ratio_ttm,
+                    'dividendYield': dividend_yield,
+                    'dividendYieldTTM': dividend_yield_ttm,
                 })
             except AttributeError as e:
                 print(e)

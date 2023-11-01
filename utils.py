@@ -6,3 +6,9 @@ def yf_to_aa(key):
     while len(key) < 5:
         key = '0' + key
     return key
+
+def float_or_none(s):
+    try:
+        return float(s)
+    except:
+        return None
