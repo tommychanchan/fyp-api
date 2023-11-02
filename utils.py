@@ -12,3 +12,42 @@ def float_or_none(s):
         return float(s)
     except:
         return None
+
+def remove_unit(num, unit):
+    # num must be number
+    if unit == '兆' or unit == '萬億':
+        num *= 1000000000000
+    elif unit == '千億':
+        num *= 100000000000
+    elif unit == '百億':
+        num *= 10000000000
+    elif unit == '十億':
+        num *= 1000000000
+    elif unit == '億':
+        num *= 100000000
+    elif unit == '千萬':
+        num *= 10000000
+    elif unit == '百萬':
+        num *= 1000000
+    elif unit == '十萬':
+        num *= 100000
+    elif unit == '萬':
+        num *= 10000
+    elif unit == '千':
+        num *= 1000
+    elif unit == '百':
+        num *= 100
+    elif unit == '十':
+        num *= 10
+    return num
+
+def extract_num_unit(s):
+    # s is sth like '17,469.89億'
+    count = 0
+    for c in s:
+        if c in '0123456789,.':
+            count += 1
+        else:
+            break
+
+    return float(s[:count].replace(',', '')), s[count:]
