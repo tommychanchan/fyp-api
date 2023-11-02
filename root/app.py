@@ -75,6 +75,13 @@ def stock_info():
 
             soup = BeautifulSoup(result, features='html.parser')
             try:
+                temp = soup.find('div', {'class': 'ind_ETF'})
+                if temp:
+                    # etf
+                    stock_type = 'etf'
+                else:
+                    stock_type = 'stock'
+
                 current_price = float(soup.find('div', {'id': 'labelLast'}).text.strip())
                 
                 prev_close_price, open_price = (float(x.strip()) for x in soup.find('div', {'id': 'valPrevClose'}).text.split('/'))
@@ -83,11 +90,14 @@ def stock_info():
                 
                 stock_number_per_hand = int(soup.find('div', string='每手股數').parent.find('div', {'class': 'float_r'}).text.strip())
                 
-                earnings_per_share = float(soup.find('div', {'data-key': 'EPS'}).parent.parent.find('div', {'class': 'float_r'}).text.strip())
+                temp = soup.find('div', {'data-key': 'EPS'})
+                earnings_per_share = temp and float(temp.parent.parent.find('div', {'class': 'float_r'}).text.strip())
                 
-                price_to_earnings_ratio, price_to_earnings_ratio_ttm = (float_or_none(x.strip()) for x in soup.find('div', {'id': 'tbPERatio'}).find('div', {'class': 'float_r'}).text.split('/'))
+                temp = soup.find('div', {'id': 'tbPERatio'})
+                price_to_earnings_ratio, price_to_earnings_ratio_ttm = (float_or_none(x.strip()) for x in temp.find('div', {'class': 'float_r'}).text.split('/')) if temp else (None, None)
 
-                price_to_book_ratio, net_asst_value_per_share = (float(x.strip()) for x in soup.find('div', {'id': 'tbPBRatio'}).find('div', {'class': 'float_r'}).text.split('/'))
+                temp = soup.find('div', {'id': 'tbPBRatio'})
+                price_to_book_ratio, net_asst_value_per_share = (float(x.strip()) for x in temp.find('div', {'class': 'float_r'}).text.split('/')) if temp else (None, None)
                 
                 temp = soup.find('div', {'id': 'VolumeValue'})
                 volumn = float(''.join((x.strip() for x in temp.find_all(string=True, recursive=False))))
@@ -101,8 +111,9 @@ def stock_info():
 
                 avg_price = float(soup.find('div', string='均價').parent.find('div', {'class': 'float_r'}).text.strip())
 
-                temp = soup.find('div', {'data-key': 'Dividend Payout'}).parent.parent.find('div', {'class': 'float_r'}).text
-                if 'N/A' in temp:
+                temp = soup.find('div', {'data-key': 'Dividend Payout'})
+                temp = temp and temp.parent.parent.find('div', {'class': 'float_r'}).text
+                if not temp or 'N/A' in temp:
                     dividend_payout = None
                     dividend_per_share = None
                 else:
@@ -124,8 +135,14 @@ def stock_info():
                 market_value, unit = extract_num_unit(temp)
                 market_value = remove_unit(market_value, unit)
 
+                turnover_rate = float(soup.find('div', {'data-key': 'Turnover Rate'}).parent.parent.parent.find('div', {'class': 'float_r'}).text.strip().strip('%')) / 100
+
+                ex_dividend_date = soup.find('div', {'data-key': 'Ex-dividend Date'}).parent.parent.find('div', {'class': 'float_r'}).text.strip() or None
+                
+                dividend_date = soup.find('div', string='派息日期').parent.find('div', {'class': 'float_r'}).text.strip() or None
 
                 return_list.append({
+                    'stockType': stock_type,
                     'symbol': symbol,
                     'currentPrice': current_price,
                     'previousClose': prev_close_price,
@@ -146,6 +163,9 @@ def stock_info():
                     'marketValue': market_value,
                     'dividendPayout': dividend_payout,
                     'dividendPerShare': dividend_per_share,
+                    'turnoverRate': turnover_rate,
+                    'exDividendDate': ex_dividend_date,
+                    'dividendDate': dividend_date,
                 })
             except AttributeError as e:
                 print(f'ERROR({symbol}): {e}')
