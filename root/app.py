@@ -89,6 +89,9 @@ def stock_info():
             ).text
 
             soup = BeautifulSoup(result, features='html.parser')
+            
+            
+            
             try:
                 temp = soup.find('div', {'class': 'ind_ETF'})
                 if temp:
@@ -99,9 +102,14 @@ def stock_info():
 
                 current_price = float(soup.find('div', {'id': 'labelLast'}).text.strip())
                 
-                prev_close_price, open_price = (float(x.strip()) for x in soup.find('div', {'id': 'valPrevClose'}).text.split('/'))
+                prev_close_price, open_price = (float_or_none(x.strip()) for x in soup.find('div', {'id': 'valPrevClose'}).text.split('/', 1))
                 
-                day_low, day_high = (float(x.strip()) for x in soup.find('div', {'id': 'valRange'}).text.split('-'))
+                temp = soup.find('div', {'id': 'valRange'}).text
+                if 'N/A' in temp:
+                    day_low = None
+                    day_high = None
+                else:
+                    day_low, day_high = (float(x.strip()) for x in temp.split('-'))
                 
                 stock_number_per_hand = int(soup.find('div', string='每手股數').parent.find('div', {'class': 'float_r'}).text.strip())
                 
