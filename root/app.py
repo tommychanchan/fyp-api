@@ -132,7 +132,7 @@ def stock_info():
                 unit = temp.find('span', {'class': 'unit'}).text.strip()
                 turnover = remove_unit(turnover, unit)
 
-                avg_price = float(soup.find('div', string='均價').parent.find('div', {'class': 'float_r'}).text.strip())
+                avg_price = float_or_none(soup.find('div', string='均價').parent.find('div', {'class': 'float_r'}).text.strip())
 
                 temp = soup.find('div', {'data-key': 'Dividend Payout'})
                 temp = temp and temp.parent.parent.find('div', {'class': 'float_r'}).text
@@ -158,7 +158,8 @@ def stock_info():
                 market_value, unit = extract_num_unit(temp)
                 market_value = remove_unit(market_value, unit)
 
-                turnover_rate = float(soup.find('div', {'data-key': 'Turnover Rate'}).parent.parent.parent.find('div', {'class': 'float_r'}).text.strip().strip('%')) / 100
+                temp = float_or_none(soup.find('div', {'data-key': 'Turnover Rate'}).parent.parent.parent.find('div', {'class': 'float_r'}).text.strip().strip('%'))
+                turnover_rate = temp and temp / 100
 
                 ex_dividend_date = soup.find('div', {'data-key': 'Ex-dividend Date'}).parent.parent.find('div', {'class': 'float_r'}).text.strip() or None
                 
