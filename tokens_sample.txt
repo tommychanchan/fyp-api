@@ -1,1 +1,7 @@
-Nasdaq Data Link API key
+Nasdaq Data Link API key here
+
+
+
+Usage:
+copy this file to "tokens.txt",
+then add the tokens in corresponding lines
