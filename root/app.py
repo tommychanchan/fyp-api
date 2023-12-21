@@ -36,7 +36,7 @@ def index():
 # ----- for rasa to call ----- #
 
 
-# get stock information
+# get real time stock information
 # -- parameters --
 # stocks: a list of stock ids (e.g. ["9988.hk", "0008.hk"])
 # -- return --
