@@ -267,5 +267,112 @@ def qa():
 
 
 
+
+# ----- for self call ----- #
+
+
+# get stock split/dividend
+# -- parameters --
+# stock: stock id (e.g. "9988.hk"/"0008.hk")
+# -- return --
+# a list of stock split/dividend info
+# -- error messages --
+# 1: cannot connect to server
+# 2: stock id not found
+
+# for api test
+# localhost:5000/stock_split
+# {"stock": "0607.hk"}
+@app.route('/stock_split', methods=['POST'])
+def stock_split():
+    json_data = request.json
+    symbol = json_data['stock']
+    stock_name = yf_to_aa(symbol)
+
+
+    return_list = []
+
+    cookie_list = [
+        'aa_cookie=1.65.201.178_57487_1703743573; mLang=TC; CookiePolicyCheck=0; __utma=177965731.1037720175.1703741287.1703741287.1703741287.1; __utmc=177965731; __utmz=177965731.1703741287.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmt=1; __utmt_a3=1; _ga=GA1.1.886609921.1703741287; _ga_MW096YVQH9=GS1.1.1703741302.1.0.1703741302.0.0.0; AALTP=1; MasterSymbol=00607; LatestRTQuotedStocks=00607; NewChart=Mini_Color=1; AAWS2=; __utma=81143559.886609921.1703741287.1703741304.1703741304.1; __utmc=81143559; __utmz=81143559.1703741304.1.1.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/; __utmt_a2=1; __utmt_b=1; _ga_FL2WFCGS0Y=GS1.1.1703741286.1.1.1703741411.0.0.0; _ga_38RQTHE076=GS1.1.1703741286.1.1.1703741412.0.0.0; __utmb=177965731.18.10.1703741287; __utmb=81143559.10.9.1703741366373',
+    ]
+
+    url = f'http://www.aastocks.com/tc/stocks/analysis/dividend.aspx?symbol={stock_name}'
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive',
+        'Cookie': random.choice(cookie_list).format(stock_name = stock_name),
+        'Host': 'www.aastocks.com',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+    }
+    try:
+        result = requests.get(
+            url, timeout=40, headers=headers, verify=False
+        ).text
+
+        soup = BeautifulSoup(result, features='html.parser')
+
+        anchor = soup.find("td", text="派息日")
+        if not anchor:
+            # stock not found
+            return jsonify({
+                'error': 2,
+            })
+
+        table = anchor.find_parent('table')
+
+        rows = table.find_all('tr')
+        for row in rows[1:]:
+            split_dividend = None
+            rate = None
+            cols = row.find_all('td')
+            detail = cols[3].text.strip()
+            date = cols[5].text.strip().replace('/', '-')
+            
+            if date == '-':
+                continue
+            if detail.startswith('普通股息'):
+                split_dividend = 'dividend'
+                rate = float(detail[detail.index('港元')+2:].strip().strip('﹚）'))
+            elif detail.startswith('合併'):
+                split_dividend = 'split'
+                numerator = int(detail[detail.index('：')+1:detail.index('股合併')].strip())
+                denominator = int(detail[detail.index('合併為')+3:-1].strip())
+                rate = numerator / denominator
+            elif detail.startswith('分拆'):
+                split_dividend = 'split'
+                numerator = int(detail[detail.index('：')+1:detail.index('股拆')].strip())
+                denominator = int(detail[detail.index('股拆')+2:-1].strip())
+                rate = numerator / denominator
+            elif detail.startswith('股份拆細'):
+                split_dividend = 'split'
+                numerator = int(detail[detail.index(': ')+2:detail.index('股拆')].strip())
+                denominator = int(detail[detail.index('股拆')+2:-1].strip())
+                rate = numerator / denominator
+            else:
+                continue
+
+            if split_dividend != None and rate != None:
+                return_list.append({
+                    'date': date,
+                    'splitDividend': split_dividend,
+                    'rate': rate,
+                })
+    except requests.exceptions.ConnectionError as e:
+        print(f'ERROR({symbol}): {e}')
+        return jsonify({
+            'error': 1,
+        })
+
+
+    return jsonify(return_list)
+
+
+
+
+
 #debug (if here stop, server will hang)
 # print(yf_to_aa('9988.hk'))
