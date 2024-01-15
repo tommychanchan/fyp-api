@@ -329,7 +329,7 @@ def stock_split():
             split_dividend = None
             rate = None
             cols = row.find_all('td')
-            detail = cols[3].text.strip()
+            detail = cols[3].text.strip().replace('：', ':').replace(': ', ':')
             date = cols[5].text.strip().replace('/', '-')
             
             if date == '-':
@@ -339,17 +339,17 @@ def stock_split():
                 rate = float(detail[detail.index('港元')+2:].strip().strip('﹚）'))
             elif detail.startswith('合併'):
                 split_dividend = 'split'
-                numerator = int(detail[detail.index('：')+1:detail.index('股合併')].strip())
+                numerator = int(detail[detail.index(':')+1:detail.index('股合併')].strip())
                 denominator = int(detail[detail.index('合併為')+3:-1].strip())
                 rate = numerator / denominator
             elif detail.startswith('分拆'):
                 split_dividend = 'split'
-                numerator = int(detail[detail.index('：')+1:detail.index('股拆')].strip())
+                numerator = int(detail[detail.index(':')+1:detail.index('股拆')].strip())
                 denominator = int(detail[detail.index('股拆')+2:-1].strip())
                 rate = numerator / denominator
             elif detail.startswith('股份拆細'):
                 split_dividend = 'split'
-                numerator = int(detail[detail.index(': ')+2:detail.index('股拆')].strip())
+                numerator = int(detail[detail.index(':')+1:detail.index('股拆')].strip())
                 denominator = int(detail[detail.index('股拆')+2:-1].strip())
                 rate = numerator / denominator
             else:
