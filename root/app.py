@@ -336,7 +336,19 @@ def stock_split():
                 continue
             if detail.startswith('普通股息'):
                 split_dividend = 'dividend'
-                rate = float(detail[detail.index('港元')+2:].strip().strip('﹚）'))
+                if '相當於港元' in detail:
+                    temp_str = ''
+                    for c in detail[detail.index('相當於港元')+5:].strip():
+                        if c in ('0123456789.'):
+                            temp_str += c
+                        else:
+                            break
+                    rate = float(temp_str)
+                else:
+                    try:
+                        rate = float(detail[detail.index('港元')+2:].strip().strip('（﹙()﹚）'))
+                    except ValueError:
+                        rate = float(detail[detail.index('美元')+2:].strip().strip('（﹙()﹚）'))
             elif detail.startswith('合併'):
                 split_dividend = 'split'
                 numerator = int(detail[detail.index(':')+1:detail.index('股合併')].strip())
