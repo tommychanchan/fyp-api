@@ -3,3 +3,4 @@ python-dotenv==1.0.0
 requests==2.31.0
 beautifulsoup4==4.12.2
 pymongo==4.3.3
+Nasdaq-Data-Link==1.0.4

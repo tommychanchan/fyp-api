@@ -1,16 +1,11 @@
 import requests
 import json
 
+from global_var import *
 
-apis = {}
-
-with open('tokens.txt', 'r') as f:
-    lines = [line.strip() for line in f.readlines()]
-    apis['nasdaq'] = lines[0]
-
-import nasdaqdatalink
-nasdaqdatalink.ApiConfig.api_key = apis['nasdaq']
-data = nasdaqdatalink.get('HKEX/00607')
+import nasdaqdatalink as nasdaq
+nasdaq.ApiConfig.api_key = apis['nasdaq']
+data = nasdaq.get('HKEX/00607')
 data['Close'] = data['Previous Close'].shift(-1)
 data.dropna(subset = ['Close'], inplace=True)
 data['Adj Close'] = data['Close']
@@ -21,8 +16,10 @@ try:
     result = requests.post(
         url, timeout=40, headers=headers, json=payload, verify=False
     ).text
-
-    split_dividend_list = sorted(json.loads(result), key=lambda d: d['date'], reverse=True)
+    result_json = json.loads(result)
+    if type(result_json) != list and result_json.get('error'):
+        print(f'error: {result_json.get("error")}')
+    split_dividend_list = sorted(result_json, key=lambda d: d['date'], reverse=True)
     for datum in split_dividend_list:
         if len(data.loc[:datum['date']]) > 0 and datum['splitDividend'] == 'split':
             data.loc[:datum['date'], ['Nominal Price', 'Adj Close']] *= datum['rate']

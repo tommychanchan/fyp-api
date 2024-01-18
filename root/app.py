@@ -5,7 +5,10 @@ import urllib.request
 import requests
 from bs4 import BeautifulSoup
 import pymongo
+import nasdaqdatalink as nasdaq
+
 from utils import *
+from global_var import *
 
 
 
@@ -16,6 +19,10 @@ fyp_db = db_client['fyp']
 qa_col = fyp_db['qa']
 
 
+
+
+# set tokens
+nasdaq.ApiConfig.api_key = apis['nasdaq']
 
 
 
@@ -266,6 +273,108 @@ def qa():
 
 
 
+# get technical analysis(TA) and fundamental analysis(FA) results
+# -- parameters --
+# stocks: a list of stock ids (e.g. ["9988.hk", "0607.hk"])
+# -- return --
+# a list of TA and FA results
+# -- error messages --
+# 1: no stock provided
+# -- error messages in each element of the return list --
+# 2: cannot connect to server
+# 3: stock id not found
+
+# for api test
+# localhost:5000/ta_fa
+# {"stocks": ["9988.hk"]}
+@app.route('/ta_fa', methods=['POST'])
+def ta_fa():
+    json_data = request.json
+    yf_list = json_data['stocks']
+    aa_list = [yf_to_aa(s) for s in yf_list]
+
+
+    if len(aa_list) == 0:
+        return jsonify({
+            'error': 1,
+        })
+
+    return_list = []
+
+    for yf, aa in zip(yf_list, aa_list):
+        if 0:
+            #TODO: get data from DB
+            ...
+        else:
+            try:
+                data = nasdaq.get(f'HKEX/{aa}')
+            except nasdaq.errors.data_link_error.NotFoundError:
+                return_list.append({
+                    'symbol': yf,
+                    'error': 3,
+                })
+                continue
+            data['Close'] = data['Previous Close'].shift(-1)
+            data.dropna(subset = ['Close'], inplace=True)
+            data['Adj Close'] = data['Close']
+            url = 'http://localhost:5000/stock_split'
+            headers = {}
+            payload = {'stock': yf}
+            try:
+                result = requests.post(
+                    url, timeout=40, headers=headers, json=payload, verify=False
+                ).text
+
+                result_json = json.loads(result)
+                if type(result_json) != list and result_json.get('error'):
+                    if result_json.get('error') == 2:
+                        return_list.append({
+                            'symbol': yf,
+                            'error': 3,
+                        })
+                        continue
+
+                split_dividend_list = sorted(result_json, key=lambda d: d['date'], reverse=True)
+                for datum in split_dividend_list:
+                    if len(data.loc[:datum['date']]) > 0 and datum['splitDividend'] == 'split':
+                        data.loc[:datum['date'], ['Nominal Price', 'Adj Close']] *= datum['rate']
+                        data.drop(data.loc[:datum['date']].index[-1], inplace=True)
+                    elif len(data.loc[:datum['date']]) > 0 and datum['splitDividend'] == 'dividend':
+                        if datum['date'] == str(data.loc[:datum['date']].iloc[-1].name)[:10]:
+                            last_date = data.loc[:datum['date']].iloc[-2].name
+                        else:
+                            last_date = data.loc[:datum['date']].iloc[-1].name
+                        nominal_price = float(data.loc[last_date, 'Nominal Price'])
+                        price_rate = 1-(datum['rate']/nominal_price)
+                        data.loc[:last_date, 'Adj Close'] *= price_rate
+                        data.drop(last_date, inplace=True)
+
+                #TODO: TA
+                #TODO: FA
+                #TODO: save to DB
+
+                return_list.append({
+                    'symbol': yf,
+                })
+            except requests.exceptions.ConnectionError as e:
+                print(f'ERROR({yf}): {e}')
+                return_list.append({
+                    'symbol': yf,
+                    'error': 2,
+                })
+
+
+    return jsonify(return_list)
+
+
+
+
+
+
+
+
+
+
 
 
 # ----- for self call ----- #
@@ -334,7 +443,7 @@ def stock_split():
             
             if date == '-':
                 continue
-            if detail.startswith('普通股息'):
+            if detail.startswith('普通股息') or detail.startswith('特別股息'):
                 split_dividend = 'dividend'
                 if '相當於港元' in detail:
                     temp_str = ''
@@ -346,9 +455,30 @@ def stock_split():
                     rate = float(temp_str)
                 else:
                     try:
-                        rate = float(detail[detail.index('港元')+2:].strip().strip('（﹙()﹚）'))
+                        temp_str = ''
+                        for c in detail[detail.index('港元')+2:].strip():
+                            if c in ('0123456789.'):
+                                temp_str += c
+                            else:
+                                break
+                        rate = float(temp_str)
                     except ValueError:
-                        rate = float(detail[detail.index('美元')+2:].strip().strip('（﹙()﹚）'))
+                        try:
+                            temp_str = ''
+                            for c in detail[detail.index('美元')+2:].strip():
+                                if c in ('0123456789.'):
+                                    temp_str += c
+                                else:
+                                    break
+                            rate = float(temp_str)
+                        except:
+                            temp_str = ''
+                            for c in detail[detail.index('人民幣')+3:].strip():
+                                if c in ('0123456789.'):
+                                    temp_str += c
+                                else:
+                                    break
+                            rate = float(temp_str)
             elif detail.startswith('合併'):
                 split_dividend = 'split'
                 numerator = int(detail[detail.index(':')+1:detail.index('股合併')].strip())
