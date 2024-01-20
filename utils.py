@@ -1,3 +1,17 @@
+import json
+from bson import json_util
+import datetime
+
+def parse_json(data):
+    return json.loads(json_util.dumps(data))
+
+def get_current_datetime():
+    return datetime.datetime.utcnow() + datetime.timedelta(hours=8)
+
+def get_current_date():
+    return datetime.datetime.combine(get_current_datetime(), datetime.time.min)
+
+
 # convert from:
 # '9988.hk' to '09988'
 # '0001.hk' to '00001'

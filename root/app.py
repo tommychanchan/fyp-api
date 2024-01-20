@@ -4,7 +4,6 @@ from flask import Flask, jsonify, request
 import urllib.request
 import requests
 from bs4 import BeautifulSoup
-import pymongo
 import nasdaqdatalink as nasdaq
 
 from utils import *
@@ -13,10 +12,7 @@ from global_var import *
 
 
 
-# connect to database
-db_client = pymongo.MongoClient('localhost', 27017)
-fyp_db = db_client['fyp']
-qa_col = fyp_db['qa']
+
 
 
 
@@ -302,9 +298,9 @@ def ta_fa():
     return_list = []
 
     for yf, aa in zip(yf_list, aa_list):
-        if 0:
-            #TODO: get data from DB
-            ...
+        result = ta_fa_col.find_one({'lastUpdate': {'$gte': get_current_date()}})
+        if result:
+            return_list.append(result)
         else:
             try:
                 data = nasdaq.get(f'HKEX/{aa}')
@@ -349,13 +345,24 @@ def ta_fa():
                         data.loc[:last_date, 'Adj Close'] *= price_rate
                         data.drop(last_date, inplace=True)
 
+
+                last_update = get_current_datetime()
+                last_date = data.iloc[-1].name
                 #TODO: TA
                 #TODO: FA
-                #TODO: save to DB
 
-                return_list.append({
+                # save to DB
+                to_return = {
                     'symbol': yf,
-                })
+                    'lastUpdate': last_update,
+                    'lastDate': last_date,
+                    'ta': [],
+                    'fa': [],
+                }
+                ta_fa_col.insert_one(to_return)
+
+
+                return_list.append(to_return)
             except requests.exceptions.ConnectionError as e:
                 print(f'ERROR({yf}): {e}')
                 return_list.append({
@@ -364,7 +371,7 @@ def ta_fa():
                 })
 
 
-    return jsonify(return_list)
+    return parse_json(return_list)
 
 
 
