@@ -1,18 +1,25 @@
 ready = False
-apis = {}
+tokens = {}
 db_client = None
 fyp_db = None
 qa_col = None
 ta_fa_col = None
+rasa_ip = None
 
 def init():
     import pymongo
+    import json
 
     global db_client, fyp_db, qa_col, ta_fa_col
+    global rasa_ip
 
     with open('tokens.txt', 'r') as f:
         lines = [line.strip() for line in f.readlines()]
-        apis['nasdaq'] = lines[0]
+        tokens['nasdaq'] = lines[0]
+
+    with open('ips.json', 'r') as f:
+        ips_json = json.load(f)
+        rasa_ip = ips_json['flaskToRasa']
 
     # connect to database
     db_client = pymongo.MongoClient('localhost', 27017)

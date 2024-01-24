@@ -18,7 +18,7 @@ from global_var import *
 
 
 # set tokens
-nasdaq.ApiConfig.api_key = apis['nasdaq']
+nasdaq.ApiConfig.api_key = tokens['nasdaq']
 
 
 
@@ -518,6 +518,57 @@ def stock_split():
 
 
     return jsonify(return_list)
+
+
+
+
+
+
+# wrapper of rasa api
+# -- parameters --
+# sender: the unique user ID
+# message: the message of the sender
+# -- return --
+# return what rasa api return directly
+# e.g.
+# [{
+#     "recipient_id": "Sender",
+#     "text": "\u963f\u91cc\u5df4\u5df4\uff0d\uff33\uff37(09988) \u7684\u73fe\u50f9\u662f 71.3\u3002"
+# }]
+# -- error messages --
+# 1: cannot connect to server
+
+# for api test
+# localhost:5000/rasa
+# {"sender": "Sender", "message": "阿里股價幾多？" }
+@app.route('/rasa', methods=['POST'])
+def rasa():
+    json_data = request.json
+    # sender = json_data['sender']
+    # message = json_data['message']
+
+
+    url = f'{rasa_ip}/webhooks/rest/webhook'
+    headers = {}
+    payload = json_data
+    try:
+        result = requests.post(
+            url, timeout=40, headers=headers, json=payload, verify=False
+        ).text
+
+        to_return = json.loads(result)
+    except requests.exceptions.ConnectionError as e:
+        print(f'ERROR: {e}')
+        to_return = {
+            'error': 1,
+        }
+
+
+    return parse_json(to_return)
+
+
+
+
 
 
 
