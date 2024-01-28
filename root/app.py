@@ -385,6 +385,60 @@ def ta_fa():
 
 
 # ----- for self call ----- #
+# for api test
+# localhost:5000/get_recommend
+
+@app.route('/get_recommend', methods=['POST'])
+def get_recommend():
+    return_list = []
+    result = None
+    cookie_list = [
+        'ASP.NET_SessionId=l3vwkyjyoeipxofgwclo5p45; aa_cookie=1.65.157.151_49759_1706423235; CookiePolicyCheck=0; _ga_FL2WFCGS0Y=GS1.1.1706427746.1.0.1706427746.0.0.0; _ga=GA1.1.1373671240.1706427747; __utma=177965731.1373671240.1706427747.1706427747.1706427747.1; __utmc=177965731; __utmz=177965731.1706427747.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmt_a3=1; __utmb=177965731.1.10.1706427747; __utma=81143559.1373671240.1706427747.1706427747.1706427747.1; __utmc=81143559; __utmz=81143559.1706427747.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmt_b=1; __utmb=81143559.1.10.1706427747; _ga_38RQTHE076=GS1.1.1706427747.1.0.1706427747.0.0.0',
+    ]
+
+    url = f'http://www.aastocks.com/tc/ltp/RTAI.aspx?type=1'
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive',
+        'Cookie': random.choice(cookie_list),
+        'Host': 'www.aastocks.com',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+    }
+    try:
+        result = requests.get(
+            url, timeout=40, headers=headers, verify=False
+        ).text
+
+        soup = BeautifulSoup(result, features='html.parser')
+
+        anchor = soup.find_all("table", width="99%")
+        print (len(anchor))
+        if not anchor:
+            # stock not found
+            return jsonify({
+                'error': 2,
+            })
+        for table in anchor:
+            recommend_list=[]
+            x=table.find_all("table","pickL")
+            print (len(x))
+            for table in x:
+                y=table.find("a")
+                print (y.text.split()[-1])
+                recommend_list.append(y.text.split()[-1])
+            return_list.append(recommend_list)
+        
+    except requests.exceptions.ConnectionError as e:
+        print(f'ERROR({symbol}): {e}')
+        return jsonify({
+            'error': 1,
+        })
+
+    return jsonify(return_list)
 
 
 # get stock split/dividend
