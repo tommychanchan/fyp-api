@@ -1,3 +1,4 @@
+import os
 import json
 import random
 from flask import Flask, jsonify, request
@@ -5,12 +6,15 @@ import urllib.request
 import requests
 from bs4 import BeautifulSoup
 import nasdaqdatalink as nasdaq
+import talib
 
 from utils import *
 from global_var import *
 
 
 
+
+PORT = os.environ.get('FLASK_RUN_PORT')
 
 
 
@@ -331,7 +335,7 @@ def ta_fa():
         data['Close'] = data['Previous Close'].shift(-1)
         data.dropna(subset = ['Close'], inplace=True)
         data['Adj Close'] = data['Close']
-        url = 'http://localhost:5000/stock_split'
+        url = f"http://localhost:{PORT}/stock_split"
         headers = {}
         payload = {'stock': yf}
         try:
@@ -366,7 +370,19 @@ def ta_fa():
 
             last_update = get_current_datetime()
             last_date = data.iloc[-1].name
+
+            # TA
+            ta = []
+            data['rsi'] = talib.RSI(data['Adj Close'], timeperiod=14)
+            data['macd'], data['macdsignal'], data['macdhist'] = talib.MACD(data['Adj Close'], fastperiod=12, slowperiod=26, signalperiod=9)
+            data['upperband'], data['middleband'], data['lowerband'] = talib.BBANDS(data['Adj Close'], timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)
+            
             #TODO: TA
+
+            #DEBUG
+            print('saved to test.csv')
+            data.iloc[-20:].to_csv('test.csv', sep=',', encoding='utf-8')
+
             #TODO: FA
 
             # save to DB
@@ -374,7 +390,7 @@ def ta_fa():
                 'symbol': yf,
                 'lastUpdate': last_update,
                 'lastDate': last_date,
-                'ta': [],
+                'ta': ta,
                 'fa': [],
             }
             ta_fa_col.insert_one(to_return)
