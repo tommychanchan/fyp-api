@@ -35,6 +35,22 @@ def index():
 # ----- for client to call ----- #
 
 
+# get unique ID for new user
+# -- return --
+# the new user ID (string)
+
+# for api test
+# localhost:5000/get_new_id
+@app.route('/get_new_id', methods=['GET', 'POST'])
+def get_new_id():
+    return jsonify({
+        'userID': str(users_col.insert_one({}).inserted_id),
+    })
+
+
+
+
+
 
 # ----- for rasa to call ----- #
 
@@ -298,78 +314,78 @@ def ta_fa():
     return_list = []
 
     for yf, aa in zip(yf_list, aa_list):
-        result = ta_fa_col.find_one({'lastUpdate': {'$gte': get_current_date()}})
+        result = ta_fa_col.find_one({'symbol': yf, 'lastUpdate': {'$gte': get_current_date()}})
         if result:
             return_list.append(result)
-        else:
-            try:
-                data = nasdaq.get(f'HKEX/{aa}')
-            except nasdaq.errors.data_link_error.NotFoundError:
-                return_list.append({
-                    'symbol': yf,
-                    'error': 3,
-                })
-                continue
-            data['Close'] = data['Previous Close'].shift(-1)
-            data.dropna(subset = ['Close'], inplace=True)
-            data['Adj Close'] = data['Close']
-            url = 'http://localhost:5000/stock_split'
-            headers = {}
-            payload = {'stock': yf}
-            try:
-                result = requests.post(
-                    url, timeout=40, headers=headers, json=payload, verify=False
-                ).text
+            continue
 
-                result_json = json.loads(result)
-                if type(result_json) != list and result_json.get('error'):
-                    if result_json.get('error') == 2:
-                        return_list.append({
-                            'symbol': yf,
-                            'error': 3,
-                        })
-                        continue
+        try:
+            data = nasdaq.get(f'HKEX/{aa}')
+        except nasdaq.errors.data_link_error.NotFoundError:
+            return_list.append({
+                'symbol': yf,
+                'error': 3,
+            })
+            continue
 
-                split_dividend_list = sorted(result_json, key=lambda d: d['date'], reverse=True)
-                for datum in split_dividend_list:
-                    if len(data.loc[:datum['date']]) > 0 and datum['splitDividend'] == 'split':
-                        data.loc[:datum['date'], ['Nominal Price', 'Adj Close']] *= datum['rate']
-                        data.drop(data.loc[:datum['date']].index[-1], inplace=True)
-                    elif len(data.loc[:datum['date']]) > 0 and datum['splitDividend'] == 'dividend':
-                        if datum['date'] == str(data.loc[:datum['date']].iloc[-1].name)[:10]:
-                            last_date = data.loc[:datum['date']].iloc[-2].name
-                        else:
-                            last_date = data.loc[:datum['date']].iloc[-1].name
-                        nominal_price = float(data.loc[last_date, 'Nominal Price'])
-                        price_rate = 1-(datum['rate']/nominal_price)
-                        data.loc[:last_date, 'Adj Close'] *= price_rate
-                        data.drop(last_date, inplace=True)
+        data['Close'] = data['Previous Close'].shift(-1)
+        data.dropna(subset = ['Close'], inplace=True)
+        data['Adj Close'] = data['Close']
+        url = 'http://localhost:5000/stock_split'
+        headers = {}
+        payload = {'stock': yf}
+        try:
+            result = requests.post(
+                url, timeout=40, headers=headers, json=payload, verify=False
+            ).text
 
+            result_json = json.loads(result)
+            if type(result_json) != list and result_json.get('error'):
+                if result_json.get('error') == 2:
+                    return_list.append({
+                        'symbol': yf,
+                        'error': 3,
+                    })
+                    continue
 
-                last_update = get_current_datetime()
-                last_date = data.iloc[-1].name
-                #TODO: TA
-                #TODO: FA
-
-                # save to DB
-                to_return = {
-                    'symbol': yf,
-                    'lastUpdate': last_update,
-                    'lastDate': last_date,
-                    'ta': [],
-                    'fa': [],
-                }
-                ta_fa_col.insert_one(to_return)
+            split_dividend_list = sorted(result_json, key=lambda d: d['date'], reverse=True)
+            for datum in split_dividend_list:
+                if len(data.loc[:datum['date']]) > 0 and datum['splitDividend'] == 'split':
+                    data.loc[:datum['date'], ['Nominal Price', 'Adj Close']] *= datum['rate']
+                    data.drop(data.loc[:datum['date']].index[-1], inplace=True)
+                elif len(data.loc[:datum['date']]) > 0 and datum['splitDividend'] == 'dividend':
+                    if datum['date'] == str(data.loc[:datum['date']].iloc[-1].name)[:10]:
+                        last_date = data.loc[:datum['date']].iloc[-2].name
+                    else:
+                        last_date = data.loc[:datum['date']].iloc[-1].name
+                    nominal_price = float(data.loc[last_date, 'Nominal Price'])
+                    price_rate = 1-(datum['rate']/nominal_price)
+                    data.loc[:last_date, 'Adj Close'] *= price_rate
+                    data.drop(last_date, inplace=True)
 
 
-                return_list.append(to_return)
-            except requests.exceptions.ConnectionError as e:
-                print(f'ERROR({yf}): {e}')
-                return_list.append({
-                    'symbol': yf,
-                    'error': 2,
-                })
+            last_update = get_current_datetime()
+            last_date = data.iloc[-1].name
+            #TODO: TA
+            #TODO: FA
 
+            # save to DB
+            to_return = {
+                'symbol': yf,
+                'lastUpdate': last_update,
+                'lastDate': last_date,
+                'ta': [],
+                'fa': [],
+            }
+            ta_fa_col.insert_one(to_return)
+
+            return_list.append(to_return)
+        except requests.exceptions.ConnectionError as e:
+            print(f'ERROR({yf}): {e}')
+            return_list.append({
+                'symbol': yf,
+                'error': 2,
+            })
 
     return parse_json(return_list)
 
