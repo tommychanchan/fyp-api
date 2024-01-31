@@ -378,42 +378,56 @@ def ta_fa():
             data['macd'], data['macdsignal'], data['macdhist'] = talib.MACD(data['Adj Close'], fastperiod=12, slowperiod=26, signalperiod=9)
             data['rsi'] = talib.RSI(data['Adj Close'], timeperiod=14)
 
-
-            data['log_return'] = np.log(data['Adj Close'] / data['Adj Close'].shift(1))
-
+            # TA: signal and position
+            data['macd_position'] = np.where(data['macdhist'] >= 0, 1, 0)
+            data['macd_signal'] = np.where(data['macd_position'] > data['macd_position'].shift(1), 1, 0)
+            data['macd_signal'] = np.where(data['macd_position'] < data['macd_position'].shift(1), -1, data['macd_signal'])
             data['rsi_signal'] = np.where(data['rsi'] > 70, -1, 0)
             data['rsi_signal'] = np.where(data['rsi'] < 30, 1, data['rsi_signal'])
-            current = 0
+            rsi_current = 0
             temp_list = []
             for i in range(len(data)):
                 if data.iloc[i]['rsi_signal'] == 1:
-                    current = 1
+                    rsi_current = 1
                 elif data.iloc[i]['rsi_signal'] == -1:
-                    current = 0
-                temp_list.append(current)
+                    rsi_current = 0
+                temp_list.append(rsi_current)
             data = data.assign(rsi_position = temp_list)
+
+            # TA: strategy
+            data['log_return'] = np.log(data['Adj Close'] / data['Adj Close'].shift(1))
+            data['macd_strategy'] = data['macd_position'].shift(1) * data['log_return']
             data['rsi_strategy'] = data['rsi_position'].shift(1) * data['log_return']
-            
+
+            # strategy only calculate last year
             last_year_date = get_current_date() + datetime.timedelta(days=-365)
-            
-            # only calculate last year
+            data.loc[:last_year_date, 'macd_strategy'] = 0
             data.loc[:last_year_date, 'rsi_strategy'] = 0
 
+            last_week_date = get_current_date() + datetime.timedelta(days=-7)
+            macd_date, macd_signal = None, 0
+            for index, row in data.loc[last_week_date:].iterrows():
+                if row['macd_signal'] != 0:
+                    macd_date = index
+                    macd_signal = row['macd_signal']
 
             ta = {
+                'backtest': None if len(data) == len(data[last_year_date:]) else {
+                    'boll': None, #TODO
+                    'macd': data['macd_strategy'].sum(),
+                    'rsi': data['rsi_strategy'].sum(),
+                },
                 'signal': {
-                    'boll': None,
-                    'macd': None,
+                    'boll': None, #TODO
+                    'macd': {
+                        'signal': macd_signal,
+                        'date': macd_date,
+                    },
                     'rsi': {
                         'signal': int(data.iloc[-1].rsi_signal),
                         'value': data.iloc[-1].rsi,
                     },
                 },
-                'backtest': None if len(data) == len(data[last_year_date:]) else {
-                    'boll': None,
-                    'macd': None,
-                    'rsi': data['rsi_strategy'].sum(),
-                }
             }
 
             #DEBUG
@@ -428,9 +442,9 @@ def ta_fa():
                 'lastUpdate': last_update,
                 'lastDate': last_date,
                 'ta': ta,
-                'fa': [],
+                'fa': None,
             }
-            ta_fa_col.insert_one(to_return)
+            # ta_fa_col.insert_one(to_return)
 
             return_list.append(to_return)
         except requests.exceptions.ConnectionError as e:
