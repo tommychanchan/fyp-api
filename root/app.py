@@ -7,6 +7,8 @@ import requests
 from bs4 import BeautifulSoup
 import nasdaqdatalink as nasdaq
 import talib
+import numpy as np
+import pandas as pd
 
 from utils import *
 from global_var import *
@@ -372,16 +374,51 @@ def ta_fa():
             last_date = data.iloc[-1].name
 
             # TA
-            ta = []
-            data['rsi'] = talib.RSI(data['Adj Close'], timeperiod=14)
-            data['macd'], data['macdsignal'], data['macdhist'] = talib.MACD(data['Adj Close'], fastperiod=12, slowperiod=26, signalperiod=9)
             data['upperband'], data['middleband'], data['lowerband'] = talib.BBANDS(data['Adj Close'], timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)
+            data['macd'], data['macdsignal'], data['macdhist'] = talib.MACD(data['Adj Close'], fastperiod=12, slowperiod=26, signalperiod=9)
+            data['rsi'] = talib.RSI(data['Adj Close'], timeperiod=14)
+
+
+            data['log_return'] = np.log(data['Adj Close'] / data['Adj Close'].shift(1))
+
+            data['rsi_signal'] = np.where(data['rsi'] > 70, -1, 0)
+            data['rsi_signal'] = np.where(data['rsi'] < 30, 1, data['rsi_signal'])
+            current = 0
+            temp_list = []
+            for i in range(len(data)):
+                if data.iloc[i]['rsi_signal'] == 1:
+                    current = 1
+                elif data.iloc[i]['rsi_signal'] == -1:
+                    current = 0
+                temp_list.append(current)
+            data = data.assign(rsi_position = temp_list)
+            data['rsi_strategy'] = data['rsi_position'].shift(1) * data['log_return']
             
-            #TODO: TA
+            last_year_date = get_current_date() + datetime.timedelta(days=-365)
+            
+            # only calculate last year
+            data.loc[:last_year_date, 'rsi_strategy'] = 0
+
+
+            ta = {
+                'signal': {
+                    'boll': None,
+                    'macd': None,
+                    'rsi': {
+                        'signal': int(data.iloc[-1].rsi_signal),
+                        'value': data.iloc[-1].rsi,
+                    },
+                },
+                'backtest': None if len(data) == len(data[last_year_date:]) else {
+                    'boll': None,
+                    'macd': None,
+                    'rsi': data['rsi_strategy'].sum(),
+                }
+            }
 
             #DEBUG
             print('saved to test.csv')
-            data.iloc[-20:].to_csv('test.csv', sep=',', encoding='utf-8')
+            data.iloc[-252:].to_csv('test.csv', sep=',', encoding='utf-8')
 
             #TODO: FA
 
