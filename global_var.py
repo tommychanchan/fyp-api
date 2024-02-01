@@ -15,5 +15,5 @@ with open('ips.json', 'r') as f:
 db_client = pymongo.MongoClient('localhost', 27017)
 fyp_db = db_client['fyp']
 qa_col = fyp_db['qa']
-ta_fa_col = fyp_db['ta_fa']
+ta_col = fyp_db['ta']
 users_col = fyp_db['users']

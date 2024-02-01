@@ -291,11 +291,11 @@ def qa():
 
 
 
-# get technical analysis(TA) and fundamental analysis(FA) results
+# get technical analysis(TA) results
 # -- parameters --
 # stocks: a list of stock ids (e.g. ["9988.hk", "0607.hk"])
 # -- return --
-# a list of TA and FA results
+# a list of TA results
 # -- error messages --
 # 1: no stock provided
 # -- error messages in each element of the return list --
@@ -303,10 +303,10 @@ def qa():
 # 3: stock id not found
 
 # for api test
-# localhost:5000/ta_fa
+# localhost:5000/ta
 # {"stocks": ["9988.hk"]}
-@app.route('/ta_fa', methods=['POST'])
-def ta_fa():
+@app.route('/ta', methods=['POST'])
+def ta():
     json_data = request.json
     yf_list = json_data['stocks']
     aa_list = [yf_to_aa(s) for s in yf_list]
@@ -320,7 +320,7 @@ def ta_fa():
     return_list = []
 
     for yf, aa in zip(yf_list, aa_list):
-        result = ta_fa_col.find_one({'symbol': yf, 'lastUpdate': {'$gte': get_current_date()}})
+        result = ta_col.find_one({'symbol': yf, 'lastUpdate': {'$gte': get_current_date()}})
         if result:
             return_list.append(result)
             continue
@@ -357,7 +357,7 @@ def ta_fa():
             split_dividend_list = sorted(result_json, key=lambda d: d['date'], reverse=True)
             for datum in split_dividend_list:
                 if len(data.loc[:datum['date']]) > 0 and datum['splitDividend'] == 'split':
-                    data.loc[:datum['date'], ['Nominal Price', 'Adj Close']] *= datum['rate']
+                    data.loc[:datum['date'], ['Nominal Price', 'High', 'Low', 'Adj Close']] *= datum['rate']
                     data.drop(data.loc[:datum['date']].index[-1], inplace=True)
                 elif len(data.loc[:datum['date']]) > 0 and datum['splitDividend'] == 'dividend':
                     if datum['date'] == str(data.loc[:datum['date']].iloc[-1].name)[:10]:
@@ -366,9 +366,12 @@ def ta_fa():
                         last_date = data.loc[:datum['date']].iloc[-1].name
                     nominal_price = float(data.loc[last_date, 'Nominal Price'])
                     price_rate = 1-(datum['rate']/nominal_price)
-                    data.loc[:last_date, 'Adj Close'] *= price_rate
+                    data.loc[:last_date, ['High', 'Low', 'Adj Close']] *= price_rate
                     data.drop(last_date, inplace=True)
 
+            # handle nan in High and Low
+            data['High'] = np.where(data['High'].isnull(), data['Adj Close'], data['High'])
+            data['Low'] = np.where(data['Low'].isna(), data['Adj Close'], data['Low'])
 
             last_update = get_current_datetime()
             last_date = data.iloc[-1].name
@@ -379,23 +382,35 @@ def ta_fa():
             data['rsi'] = talib.RSI(data['Adj Close'], timeperiod=14)
 
             # TA: signal and position
+            data['boll_signal'] = np.where(data['High'] > data['upperband'], -1, 0)
+            data['boll_signal'] = np.where(data['Low'] < data['lowerband'], 1, data['boll_signal'])
             data['macd_position'] = np.where(data['macdhist'] >= 0, 1, 0)
             data['macd_signal'] = np.where(data['macd_position'] > data['macd_position'].shift(1), 1, 0)
             data['macd_signal'] = np.where(data['macd_position'] < data['macd_position'].shift(1), -1, data['macd_signal'])
             data['rsi_signal'] = np.where(data['rsi'] > 70, -1, 0)
             data['rsi_signal'] = np.where(data['rsi'] < 30, 1, data['rsi_signal'])
+            boll_current = 0
             rsi_current = 0
-            temp_list = []
+            boll_list = []
+            rsi_list = []
             for i in range(len(data)):
+                if data.iloc[i]['boll_signal'] == 1:
+                    boll_current = 1
+                elif data.iloc[i]['boll_signal'] == -1:
+                    boll_current = 0
+                boll_list.append(boll_current)
+
                 if data.iloc[i]['rsi_signal'] == 1:
                     rsi_current = 1
                 elif data.iloc[i]['rsi_signal'] == -1:
                     rsi_current = 0
-                temp_list.append(rsi_current)
-            data = data.assign(rsi_position = temp_list)
+                rsi_list.append(rsi_current)
+            data = data.assign(boll_position = boll_list)
+            data = data.assign(rsi_position = rsi_list)
 
             # TA: strategy
             data['log_return'] = np.log(data['Adj Close'] / data['Adj Close'].shift(1))
+            data['boll_strategy'] = data['boll_position'].shift(1) * data['log_return']
             data['macd_strategy'] = data['macd_position'].shift(1) * data['log_return']
             data['rsi_strategy'] = data['rsi_position'].shift(1) * data['log_return']
 
@@ -413,14 +428,18 @@ def ta_fa():
 
             ta = {
                 'backtest': None if len(data) == len(data[last_year_date:]) else {
-                    'boll': None, #TODO
+                    'boll': data['rsi_strategy'].sum(),
                     'macd': data['macd_strategy'].sum(),
                     'rsi': data['rsi_strategy'].sum(),
                 },
                 'signal': {
-                    'boll': None, #TODO
+                    'boll': {
+                        'signal': int(data.iloc[-1].boll_signal),
+                        'upperband': data.iloc[-1].upperband,
+                        'lowerband': data.iloc[-1].lowerband,
+                    },
                     'macd': {
-                        'signal': macd_signal,
+                        'signal': int(macd_signal),
                         'date': macd_date,
                     },
                     'rsi': {
@@ -431,10 +450,7 @@ def ta_fa():
             }
 
             #DEBUG
-            print('saved to test.csv')
-            data.iloc[-252:].to_csv('test.csv', sep=',', encoding='utf-8')
-
-            #TODO: FA
+            # data.iloc[-252:].to_csv('test.csv', sep=',', encoding='utf-8')
 
             # save to DB
             to_return = {
@@ -442,9 +458,8 @@ def ta_fa():
                 'lastUpdate': last_update,
                 'lastDate': last_date,
                 'ta': ta,
-                'fa': None,
             }
-            # ta_fa_col.insert_one(to_return)
+            ta_col.insert_one(to_return)
 
             return_list.append(to_return)
         except requests.exceptions.ConnectionError as e:
