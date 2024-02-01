@@ -416,6 +416,7 @@ def ta():
 
             # strategy only calculate last year
             last_year_date = get_current_date() + datetime.timedelta(days=-365)
+            data.loc[:last_year_date, 'boll_strategy'] = 0
             data.loc[:last_year_date, 'macd_strategy'] = 0
             data.loc[:last_year_date, 'rsi_strategy'] = 0
 
@@ -428,7 +429,7 @@ def ta():
 
             ta = {
                 'backtest': None if len(data) == len(data[last_year_date:]) else {
-                    'boll': data['rsi_strategy'].sum(),
+                    'boll': data['boll_strategy'].sum(),
                     'macd': data['macd_strategy'].sum(),
                     'rsi': data['rsi_strategy'].sum(),
                 },
