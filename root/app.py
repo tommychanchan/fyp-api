@@ -416,6 +416,7 @@ def ta():
 
             # strategy only calculate last year
             last_year_date = get_current_date() + datetime.timedelta(days=-365)
+            data.loc[:last_year_date, 'log_return'] = 0
             data.loc[:last_year_date, 'boll_strategy'] = 0
             data.loc[:last_year_date, 'macd_strategy'] = 0
             data.loc[:last_year_date, 'rsi_strategy'] = 0
@@ -448,6 +449,7 @@ def ta():
                         'value': data.iloc[-1].rsi,
                     },
                 },
+                'stock_return': data['log_return'].sum(),
             }
 
             #DEBUG
