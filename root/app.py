@@ -427,12 +427,11 @@ def ta():
                 if row['macd_signal'] != 0:
                     macd_date = index
                     macd_signal = row['macd_signal']
-
             ta = {
                 'backtest': None if len(data) == len(data[last_year_date:]) else {
-                    'boll': data['boll_strategy'].sum(),
-                    'macd': data['macd_strategy'].sum(),
-                    'rsi': data['rsi_strategy'].sum(),
+                    'boll': np.exp(data['boll_strategy'].sum()) - 1,
+                    'macd': np.exp(data['macd_strategy'].sum()) - 1,
+                    'rsi': np.exp(data['rsi_strategy'].sum()) - 1,
                 },
                 'signal': {
                     'boll': {
@@ -449,7 +448,7 @@ def ta():
                         'value': data.iloc[-1].rsi,
                     },
                 },
-                'stock_return': data['log_return'].sum(),
+                'stock_return': np.exp(data['log_return'].sum()) - 1,
             }
 
             #DEBUG
