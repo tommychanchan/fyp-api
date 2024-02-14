@@ -33,7 +33,9 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return 'You should not go here :('
+    return jsonify({
+        'api': True,
+    })
 
 
 
