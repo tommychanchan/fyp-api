@@ -479,6 +479,43 @@ def ta():
 
 
 
+# save users' stock to database
+# -- parameters --
+# portfolio: an object of the buying stock information
+# -- return --
+# an object with error number
+# -- error messages --
+# 0: no error
+
+# for api test
+# localhost:5000/save_portfolio
+# {"userID": "Sender", "date": "2000/01/01", "price": 62.53, "stock": "9988.hk", "stock_number": 100}
+@app.route('/save_portfolio', methods=['POST'])
+def save_portfolio():
+    json_data = request.json
+    user_id = json_data['userID']
+    date = json_data['date']
+    price = json_data['price']
+    stock = json_data['stock']
+    stock_number = json_data['stock_number']
+
+    error = 0
+
+    portfolio_col.insert_one({
+        'userID': user_id,
+        'date': date,
+        'price': price,
+        'stock': stock,
+        'stock_number': stock_number,
+    })
+
+    return jsonify({
+        'error': error,
+    })
+
+
+
+
 
 
 
