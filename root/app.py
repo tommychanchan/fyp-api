@@ -494,6 +494,7 @@ def ta():
 def save_portfolio():
     json_data = request.json
     user_id = json_data['userID']
+    buysell = json_data['buysell']
     date = json_data['date']
     price = json_data['price']
     stock = json_data['stock']
@@ -503,6 +504,7 @@ def save_portfolio():
 
     portfolio_col.insert_one({
         'userID': user_id,
+        'buysell': buysell,
         'date': date,
         'price': price,
         'stock': stock,
