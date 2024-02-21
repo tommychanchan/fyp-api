@@ -489,7 +489,7 @@ def ta():
 
 # for api test
 # localhost:5000/save_portfolio
-# {"userID": "Sender", "date": "2000/01/01", "price": 62.53, "stock": "9988.hk", "stock_number": 100}
+# {"userID": "Sender", "buysell": "buy", "date": "2000/01/01", "price": 12.34, "stock": "0001.hk", "stockNumber": 100}
 @app.route('/save_portfolio', methods=['POST'])
 def save_portfolio():
     json_data = request.json
@@ -498,7 +498,7 @@ def save_portfolio():
     date = json_data['date']
     price = json_data['price']
     stock = json_data['stock']
-    stock_number = json_data['stock_number']
+    stock_number = json_data['stockNumber']
 
     error = 0
 
@@ -508,7 +508,7 @@ def save_portfolio():
         'date': date,
         'price': price,
         'stock': stock,
-        'stock_number': stock_number,
+        'stockNumber': stock_number,
     })
 
     return jsonify({
@@ -604,8 +604,13 @@ def stock_split():
     return_list = []
 
     cookie_list = [
-        'aa_cookie=1.65.201.178_57487_1703743573; mLang=TC; CookiePolicyCheck=0; __utma=177965731.1037720175.1703741287.1703741287.1703741287.1; __utmc=177965731; __utmz=177965731.1703741287.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmt=1; __utmt_a3=1; _ga=GA1.1.886609921.1703741287; _ga_MW096YVQH9=GS1.1.1703741302.1.0.1703741302.0.0.0; AALTP=1; MasterSymbol=00607; LatestRTQuotedStocks=00607; NewChart=Mini_Color=1; AAWS2=; __utma=81143559.886609921.1703741287.1703741304.1703741304.1; __utmc=81143559; __utmz=81143559.1703741304.1.1.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/; __utmt_a2=1; __utmt_b=1; _ga_FL2WFCGS0Y=GS1.1.1703741286.1.1.1703741411.0.0.0; _ga_38RQTHE076=GS1.1.1703741286.1.1.1703741412.0.0.0; __utmb=177965731.18.10.1703741287; __utmb=81143559.10.9.1703741366373',
+        'aa_cookie=1.65.201.178_57487_1703743573; mLang=TC; CookiePolicyCheck=0; __utma=177965731.1037720175.1703741287.1703741287.1703741287.1; __utmc=177965731; __utmz=177965731.1703741287.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmt=1; __utmt_a3=1; _ga=GA1.1.886609921.1703741287; _ga_MW096YVQH9=GS1.1.1703741302.1.0.1703741302.0.0.0; AALTP=1; MasterSymbol={stock_name}; LatestRTQuotedStocks={stock_name}; NewChart=Mini_Color=1; AAWS2=; __utma=81143559.886609921.1703741287.1703741304.1703741304.1; __utmc=81143559; __utmz=81143559.1703741304.1.1.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/; __utmt_a2=1; __utmt_b=1; _ga_FL2WFCGS0Y=GS1.1.1703741286.1.1.1703741411.0.0.0; _ga_38RQTHE076=GS1.1.1703741286.1.1.1703741412.0.0.0; __utmb=177965731.18.10.1703741287; __utmb=81143559.10.9.1703741366373',
+        'aa_cookie=58.153.154.84_63748_1708533945; MasterSymbol={stock_name}; LatestRTQuotedStocks={stock_name}; CookiePolicyCheck=0; _ga=GA1.1.1298668379.1708509818; __utma=177965731.1298668379.1708509818.1708509818.1708509818.1; __utmc=177965731; __utmz=177965731.1708509818.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmt_a3=1; __utmb=177965731.1.10.1708509818; __utma=81143559.1298668379.1708509818.1708509818.1708509818.1; __utmc=81143559; __utmz=81143559.1708509818.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmt_a2=1; __utmb=81143559.1.10.1708509818; _ga_FL2WFCGS0Y=GS1.1.1708509817.1.0.1708509825.0.0.0; _ga_38RQTHE076=GS1.1.1708509818.1.0.1708509825.0.0.0',
     ]
+
+    result = split_col.find_one({'symbol': symbol, 'lastUpdate': {'$gte': get_current_date()}})
+    if result:
+        return parse_json(result.get('data'))
 
     url = f'http://www.aastocks.com/tc/stocks/analysis/dividend.aspx?symbol={stock_name}'
     headers = {
@@ -705,14 +710,23 @@ def stock_split():
                     'splitDividend': split_dividend,
                     'rate': rate,
                 })
+
+        last_update = get_current_datetime()
+
+        # save to DB
+        to_return = {
+            'symbol': symbol,
+            'lastUpdate': last_update,
+            'data': return_list,
+        }
+        split_col.insert_one(to_return)
     except requests.exceptions.ConnectionError as e:
         print(f'ERROR({symbol}): {e}')
         return jsonify({
             'error': 1,
         })
 
-
-    return jsonify(return_list)
+    return parse_json(return_list)
 
 
 
