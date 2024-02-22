@@ -481,7 +481,7 @@ def ta():
 
 # save users' stock to database
 # -- parameters --
-# portfolio: an object of the buying stock information
+# an object of the buying/selling stock information
 # -- return --
 # an object with error number
 # -- error messages --
@@ -505,7 +505,7 @@ def save_portfolio():
     portfolio_col.insert_one({
         'userID': user_id,
         'buysell': buysell,
-        'date': date,
+        'date': date.replace('/', '-'),
         'price': price,
         'stock': stock,
         'stockNumber': stock_number,
@@ -515,6 +515,70 @@ def save_portfolio():
         'error': error,
     })
 
+
+
+
+
+# view users' current portfolio
+# -- parameters --
+# userID
+# -- return --
+# an object with current stock number for each stock
+# e.g. {"0001.hk": 2000, "0002.hk": 500}
+
+# for api test
+# localhost:5000/current_portfolio
+# {"userID": "Sender"}
+@app.route('/current_portfolio', methods=['POST'])
+def current_portfolio():
+    json_data = request.json
+
+    user_id = json_data['userID']
+
+    error = 0
+
+    actions = {}
+
+    for result in portfolio_col.find({'userID': user_id}, sort=[("_id", 1)]):
+        if not result.get('stock') in actions:
+            actions[result.get('stock')] = []
+        actions[result.get('stock')].append(result)
+
+    return_dict = {x: 0 for x in actions.keys()}
+    url = f"http://localhost:{PORT}/stock_split"
+    headers = {}
+    for stock in actions.keys():
+        payload = {'stock': stock}
+        try:
+            result = requests.post(
+                url, timeout=40, headers=headers, json=payload, verify=False
+            ).text
+
+            result_json = json.loads(result)
+            if type(result_json) != list and result_json.get('error'):
+                # stock ID not found
+                continue
+
+            for datum in result_json:
+                if datum['splitDividend'] == 'split':
+                    actions[stock].append({
+                        'buysell': 'split',
+                        'date': datum['date'],
+                        'rate': datum['rate'],
+                    })
+            
+            actions[stock].sort(key=lambda x: x['date'])
+            for action in actions[stock]:
+                if action.get('buysell') == 'buy':
+                    return_dict[stock] += action.get('stockNumber')
+                elif action.get('buysell') == 'sell':
+                    return_dict[stock] -= action.get('stockNumber')
+                elif action.get('buysell') == 'split':
+                    return_dict[stock] /= action.get('rate')
+        except requests.exceptions.ConnectionError as e:
+            print(f'ERROR({stock}): {e}')
+
+    return jsonify(return_dict)
 
 
 
