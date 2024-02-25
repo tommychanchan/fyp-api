@@ -341,22 +341,22 @@ def ta():
         data['Adj Close'] = data['Close']
         url = f"http://localhost:{PORT}/stock_split"
         headers = {}
-        payload = {'stock': yf}
+        payload = {'stocks': [yf]}
         try:
             result = requests.post(
                 url, timeout=40, headers=headers, json=payload, verify=False
             ).text
 
             result_json = json.loads(result)
-            if type(result_json) != list and result_json.get('error'):
-                if result_json.get('error') == 2:
+            if type(result_json[yf]) != list and result_json[yf].get('error'):
+                if result_json[yf].get('error') == 2:
                     return_list.append({
                         'symbol': yf,
                         'error': 3,
                     })
                     continue
 
-            split_dividend_list = sorted(result_json, key=lambda d: d['date'], reverse=True)
+            split_dividend_list = sorted(result_json[yf], key=lambda d: d['date'], reverse=True)
             for datum in split_dividend_list:
                 if len(data.loc[:datum['date']]) > 0 and datum['splitDividend'] == 'split':
                     data.loc[:datum['date'], ['Nominal Price', 'High', 'Low', 'Adj Close']] *= datum['rate']
@@ -521,7 +521,7 @@ def save_portfolio():
 
 # view users' current portfolio
 # -- parameters --
-# userID
+# userID, [date]
 # -- return --
 # an object with current stock number for each stock
 # e.g. {"0001.hk": 2000, "0002.hk": 500}
@@ -529,11 +529,16 @@ def save_portfolio():
 # for api test
 # localhost:5000/current_portfolio
 # {"userID": "Sender"}
+# {"userID": "Sender2", "date": "2023-10-29"}
+# {"userID": "Sender2", "date": "2023-10-30"}
 @app.route('/current_portfolio', methods=['POST'])
 def current_portfolio():
     json_data = request.json
 
     user_id = json_data['userID']
+    date = json_data.get('date')
+
+    #TODO: until date
 
     error = 0
 
@@ -547,26 +552,29 @@ def current_portfolio():
     return_dict = {x: 0 for x in actions.keys()}
     url = f"http://localhost:{PORT}/stock_split"
     headers = {}
-    for stock in actions.keys():
-        payload = {'stock': stock}
-        try:
-            result = requests.post(
-                url, timeout=40, headers=headers, json=payload, verify=False
-            ).text
+    payload = {'stocks': list(actions.keys())}
+    try:
+        result = requests.post(
+            url, timeout=40, headers=headers, json=payload, verify=False
+        ).text
 
-            result_json = json.loads(result)
-            if type(result_json) != list and result_json.get('error'):
+        result_json = json.loads(result)
+        if result_json.get('error') == 1:
+            # cannot connect to aastocks server
+            print('ERROR: Cannot connect to AASTOCKS server.')
+        for stock in result_json.keys():
+            if type(result_json[stock]) != list and result_json[stock].get('error') == 2:
                 # stock ID not found
                 continue
 
-            for datum in result_json:
+            for datum in result_json[stock]:
                 if datum['splitDividend'] == 'split':
                     actions[stock].append({
                         'buysell': 'split',
                         'date': datum['date'],
                         'rate': datum['rate'],
                     })
-            
+
             actions[stock].sort(key=lambda x: x['date'])
             for action in actions[stock]:
                 if action.get('buysell') == 'buy':
@@ -575,8 +583,8 @@ def current_portfolio():
                     return_dict[stock] -= action.get('stockNumber')
                 elif action.get('buysell') == 'split':
                     return_dict[stock] /= action.get('rate')
-        except requests.exceptions.ConnectionError as e:
-            print(f'ERROR({stock}): {e}')
+    except requests.exceptions.ConnectionError as e:
+        print(f'ERROR({stock}): {e}')
 
     return jsonify(return_dict)
 
@@ -648,149 +656,159 @@ def get_recommend():
 
 # get stock split/dividend
 # -- parameters --
-# stock: stock id (e.g. "9988.hk"/"0008.hk")
+# stocks: list of stock ids
 # -- return --
-# a list of stock split/dividend info
+# dict of list of stock split/dividend info
 # -- error messages --
 # 1: cannot connect to server
+# -- error messages in each element of the return dict --
 # 2: stock id not found
 
 # for api test
 # localhost:5000/stock_split
-# {"stock": "0607.hk"}
+# {"stocks": ["0001.hk", "0607.hk"]}
 @app.route('/stock_split', methods=['POST'])
 def stock_split():
     json_data = request.json
-    symbol = json_data['stock']
-    stock_name = yf_to_aa(symbol)
+    stocks = json_data['stocks']
 
-
-    return_list = []
+    return_dict = {}
 
     cookie_list = [
         'aa_cookie=1.65.201.178_57487_1703743573; mLang=TC; CookiePolicyCheck=0; __utma=177965731.1037720175.1703741287.1703741287.1703741287.1; __utmc=177965731; __utmz=177965731.1703741287.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmt=1; __utmt_a3=1; _ga=GA1.1.886609921.1703741287; _ga_MW096YVQH9=GS1.1.1703741302.1.0.1703741302.0.0.0; AALTP=1; MasterSymbol={stock_name}; LatestRTQuotedStocks={stock_name}; NewChart=Mini_Color=1; AAWS2=; __utma=81143559.886609921.1703741287.1703741304.1703741304.1; __utmc=81143559; __utmz=81143559.1703741304.1.1.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/; __utmt_a2=1; __utmt_b=1; _ga_FL2WFCGS0Y=GS1.1.1703741286.1.1.1703741411.0.0.0; _ga_38RQTHE076=GS1.1.1703741286.1.1.1703741412.0.0.0; __utmb=177965731.18.10.1703741287; __utmb=81143559.10.9.1703741366373',
         'aa_cookie=58.153.154.84_63748_1708533945; MasterSymbol={stock_name}; LatestRTQuotedStocks={stock_name}; CookiePolicyCheck=0; _ga=GA1.1.1298668379.1708509818; __utma=177965731.1298668379.1708509818.1708509818.1708509818.1; __utmc=177965731; __utmz=177965731.1708509818.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmt_a3=1; __utmb=177965731.1.10.1708509818; __utma=81143559.1298668379.1708509818.1708509818.1708509818.1; __utmc=81143559; __utmz=81143559.1708509818.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmt_a2=1; __utmb=81143559.1.10.1708509818; _ga_FL2WFCGS0Y=GS1.1.1708509817.1.0.1708509825.0.0.0; _ga_38RQTHE076=GS1.1.1708509818.1.0.1708509825.0.0.0',
     ]
 
-    result = split_col.find_one({'symbol': symbol, 'lastUpdate': {'$gte': get_current_date()}})
-    if result:
-        return parse_json(result.get('data'))
+    stock_name = None
+    result = None
+    url = None
+    headers = None
+    return_list = None
+    for symbol in stocks:
+        return_list = []
+        return_dict[symbol] = return_list
+        stock_name = yf_to_aa(symbol)
+        result = split_col.find_one({'symbol': symbol, 'lastUpdate': {'$gte': get_current_date()}})
+        if result:
+            return_dict[symbol] = result.get('data')
+            continue
 
-    url = f'http://www.aastocks.com/tc/stocks/analysis/dividend.aspx?symbol={stock_name}'
-    headers = {
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'Accept-Encoding': 'gzip, deflate',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Cache-Control': 'max-age=0',
-        'Connection': 'keep-alive',
-        'Cookie': random.choice(cookie_list).format(stock_name = stock_name),
-        'Host': 'www.aastocks.com',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
-    }
-    try:
-        result = requests.get(
-            url, timeout=40, headers=headers, verify=False
-        ).text
+        url = f'http://www.aastocks.com/tc/stocks/analysis/dividend.aspx?symbol={stock_name}'
+        headers = {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Encoding': 'gzip, deflate',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Cache-Control': 'max-age=0',
+            'Connection': 'keep-alive',
+            'Cookie': random.choice(cookie_list).format(stock_name = stock_name),
+            'Host': 'www.aastocks.com',
+            'Upgrade-Insecure-Requests': '1',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+        }
+        try:
+            result = requests.get(
+                url, timeout=40, headers=headers, verify=False
+            ).text
 
-        soup = BeautifulSoup(result, features='html.parser')
+            soup = BeautifulSoup(result, features='html.parser')
 
-        anchor = soup.find("td", text="派息日")
-        if not anchor:
-            # stock not found
-            return jsonify({
-                'error': 2,
-            })
-
-        table = anchor.find_parent('table')
-
-        rows = table.find_all('tr')
-        for row in rows[1:]:
-            split_dividend = None
-            rate = None
-            cols = row.find_all('td')
-            detail = cols[3].text.strip().replace('：', ':').replace(': ', ':')
-            date = cols[5].text.strip().replace('/', '-')
-            
-            if date == '-':
+            anchor = soup.find("td", text="派息日")
+            if not anchor:
+                # stock not found
+                return_dict[symbol] = {
+                    'error': 2,
+                }
                 continue
-            if detail.startswith('普通股息') or detail.startswith('特別股息'):
-                split_dividend = 'dividend'
-                if '相當於港元' in detail:
-                    temp_str = ''
-                    for c in detail[detail.index('相當於港元')+5:].strip():
-                        if c in ('0123456789.'):
-                            temp_str += c
-                        else:
-                            break
-                    rate = float(temp_str)
-                else:
-                    try:
+
+            table = anchor.find_parent('table')
+
+            rows = table.find_all('tr')
+            for row in rows[1:]:
+                split_dividend = None
+                rate = None
+                cols = row.find_all('td')
+                detail = cols[3].text.strip().replace('：', ':').replace(': ', ':')
+                date = cols[5].text.strip().replace('/', '-')
+                
+                if date == '-':
+                    continue
+                if detail.startswith('普通股息') or detail.startswith('特別股息'):
+                    split_dividend = 'dividend'
+                    if '相當於港元' in detail:
                         temp_str = ''
-                        for c in detail[detail.index('港元')+2:].strip():
+                        for c in detail[detail.index('相當於港元')+5:].strip():
                             if c in ('0123456789.'):
                                 temp_str += c
                             else:
                                 break
                         rate = float(temp_str)
-                    except ValueError:
+                    else:
                         try:
                             temp_str = ''
-                            for c in detail[detail.index('美元')+2:].strip():
+                            for c in detail[detail.index('港元')+2:].strip():
                                 if c in ('0123456789.'):
                                     temp_str += c
                                 else:
                                     break
                             rate = float(temp_str)
-                        except:
-                            temp_str = ''
-                            for c in detail[detail.index('人民幣')+3:].strip():
-                                if c in ('0123456789.'):
-                                    temp_str += c
-                                else:
-                                    break
-                            rate = float(temp_str)
-            elif detail.startswith('合併'):
-                split_dividend = 'split'
-                numerator = int(detail[detail.index(':')+1:detail.index('股合併')].strip())
-                denominator = int(detail[detail.index('合併為')+3:-1].strip())
-                rate = numerator / denominator
-            elif detail.startswith('分拆'):
-                split_dividend = 'split'
-                numerator = int(detail[detail.index(':')+1:detail.index('股拆')].strip())
-                denominator = int(detail[detail.index('股拆')+2:-1].strip())
-                rate = numerator / denominator
-            elif detail.startswith('股份拆細'):
-                split_dividend = 'split'
-                numerator = int(detail[detail.index(':')+1:detail.index('股拆')].strip())
-                denominator = int(detail[detail.index('股拆')+2:-1].strip())
-                rate = numerator / denominator
-            else:
-                continue
+                        except ValueError:
+                            try:
+                                temp_str = ''
+                                for c in detail[detail.index('美元')+2:].strip():
+                                    if c in ('0123456789.'):
+                                        temp_str += c
+                                    else:
+                                        break
+                                rate = float(temp_str)
+                            except:
+                                temp_str = ''
+                                for c in detail[detail.index('人民幣')+3:].strip():
+                                    if c in ('0123456789.'):
+                                        temp_str += c
+                                    else:
+                                        break
+                                rate = float(temp_str)
+                elif detail.startswith('合併'):
+                    split_dividend = 'split'
+                    numerator = int(detail[detail.index(':')+1:detail.index('股合併')].strip())
+                    denominator = int(detail[detail.index('合併為')+3:-1].strip())
+                    rate = numerator / denominator
+                elif detail.startswith('分拆'):
+                    split_dividend = 'split'
+                    numerator = int(detail[detail.index(':')+1:detail.index('股拆')].strip())
+                    denominator = int(detail[detail.index('股拆')+2:-1].strip())
+                    rate = numerator / denominator
+                elif detail.startswith('股份拆細'):
+                    split_dividend = 'split'
+                    numerator = int(detail[detail.index(':')+1:detail.index('股拆')].strip())
+                    denominator = int(detail[detail.index('股拆')+2:-1].strip())
+                    rate = numerator / denominator
+                else:
+                    continue
 
-            if split_dividend != None and rate != None:
-                return_list.append({
-                    'date': date,
-                    'splitDividend': split_dividend,
-                    'rate': rate,
-                })
+                if split_dividend != None and rate != None:
+                    return_list.append({
+                        'date': date,
+                        'splitDividend': split_dividend,
+                        'rate': rate,
+                    })
 
-        last_update = get_current_datetime()
+            last_update = get_current_datetime()
 
-        # save to DB
-        to_return = {
-            'symbol': symbol,
-            'lastUpdate': last_update,
-            'data': return_list,
-        }
-        split_col.insert_one(to_return)
-    except requests.exceptions.ConnectionError as e:
-        print(f'ERROR({symbol}): {e}')
-        return jsonify({
-            'error': 1,
-        })
+            # save to DB
+            to_return = {
+                'symbol': symbol,
+                'lastUpdate': last_update,
+                'data': return_list,
+            }
+            split_col.insert_one(to_return)
+        except requests.exceptions.ConnectionError as e:
+            print(f'ERROR({symbol}): {e}')
+            return jsonify({
+                'error': 1,
+            })
 
-    return parse_json(return_list)
+    return parse_json(return_dict)
 
 
 
