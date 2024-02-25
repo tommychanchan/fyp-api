@@ -811,6 +811,229 @@ def stock_split():
 # -- error messages --
 # 1: cannot connect to server
 
+
+# get stock EPS/年度收入增長
+# -- parameters --
+# stock: stock id (e.g. "9988.hk"/"0008.hk")
+# -- return --
+# a list of stock EPS/年度收入增長
+# -- error messages --
+# 1: cannot connect to server
+# 2: stock id not found
+
+# for api test
+# localhost:5000/get_future
+# {"stock": "09988.hk"}
+@app.route('/get_future', methods=['POST'])
+def get_future():
+    json_data = request.json
+    symbol = json_data['stock']
+    stock_name = yf_to_aa(symbol)
+    return_list = []
+
+    result = None
+    cookie_list = [
+        f'MasterSymbol={stock_name}; LatestRTQuotedStocks={stock_name}; AAWS=; __utmz=177965731.1706548775.1.1.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/company-fundamental/; _ga=GA1.1.1111401661.1706548779; mLang=TC; CookiePolicyCheck=0; __utma=177965731.867252439.1706548775.1706632264.1706709816.3; __utmc=177965731; __utmc=81143559; cto_bundle=GzvXhl9uYnFKcWxpQzBSbTZ3ckRsMkR1SVpCMEhqeks5YVk2ZHR6VnhJOGxORmdCQ3dPS3JvaHklMkJTS1p5MlMlMkZaazMxTUN1bGtNWDFlbVEya2V4R1JBN1RTOWs4RmRLV0dhYWZOcUVEZm4wVDFhTXE0TXV0NmtJQjJtQnlSZkprM3JsS0dvcHpmanE0Uk9yb0hOQVZ1TUJ2Z2dBJTNEJTNE; _ga_MW096YVQH9=GS1.1.1706710420.1.0.1706710420.0.0.0; NewChart=Mini_Color=1; __utmt_a3=1; __utma=81143559.1648372063.1706548775.1706709838.1706712121.4; __utmz=81143559.1706712121.4.2.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/peer.aspx; __utmt_a2=1; __utmt_b=1; aa_cookie=27.109.218.9_63070_1706714877; __gads=ID=0554592d72201b43:T=1706548776:RT=1706712517:S=ALNI_MYAXodkQ_RUUnwvogWLuzRAOgsIRw; __gpi=UID=00000cf386237f10:T=1706548776:RT=1706712517:S=ALNI_MbCipQTizyo4ttg4DkAGd2qduIiIw; __eoi=ID=0eb93aed36a03300:T=1706632265:RT=1706712517:S=AA-AfjZlC4icUga4POBjQvB5Cqef; __utmb=177965731.18.10.1706709816; __utmb=81143559.18.10.1706712121; _ga_FL2WFCGS0Y=GS1.1.1706709817.3.1.1706712630.0.0.0; _ga_38RQTHE076=GS1.1.1706709819.17.1.1706712631.0.0.0',
+    ]
+
+    url = f'http://www.aastocks.com/tc/stocks/analysis/company-fundamental/earnings-summary?symbol={stock_name}&period=4'
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive',
+        'Cookie': random.choice(cookie_list).format(stock_name = stock_name),
+        'Host': 'www.aastocks.com',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+    }
+    try:
+        result = requests.get(
+            url, timeout=40, headers=headers, verify=False
+        ).text
+        soup = BeautifulSoup(result, features='html.parser')
+        anchor = soup.find('div', {'data-key': 'EPS'}).parent
+    #only can read stock that have 5 years or above history
+        three_year_ago_EPS=float(anchor.find_next_sibling().find_next_sibling().find_next_sibling().text.strip())
+        four_year_ago_EPS=float(anchor.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text.strip())
+        five_year_ago_EPS=float(anchor.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text.strip())
+        print("three_year_ago_EPS:"+str(three_year_ago_EPS)) 
+        print("four_year_ago_EPS:"+str(four_year_ago_EPS))
+        print("five_year_ago_EPS:"+str(five_year_ago_EPS))    
+
+        soup = BeautifulSoup(result, features='html.parser')
+        anchor =soup.select('td.cfvalue.txt_r.cls.bold')
+        for 
+        print(anchor)
+       
+        if not anchor:
+            # stock not found
+            return jsonify({
+                'error': 2,
+            })
+
+    except requests.exceptions.ConnectionError as e:
+        print(f'ERROR({symbol}): {e}')
+        return jsonify({
+            'error': 1,
+        })
+
+    result = None
+    cookie_list = [
+        f'MasterSymbol={stock_name}; LatestRTQuotedStocks={stock_name}; AAWS=; __utmz=177965731.1706548775.1.1.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/company-fundamental/; __utmz=81143559.1706548775.1.1.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/company-fundamental/; _ga=GA1.1.1111401661.1706548779; aa_cookie=223.16.119.164_51789_1706705282; mLang=TC; CookiePolicyCheck=0; __utma=177965731.867252439.1706548775.1706632264.1706709816.3; __utmc=177965731; __utmt_a3=1; __utmb=177965731.2.10.1706709816; __utma=81143559.1648372063.1706548775.1706632264.1706709838.3; __utmc=81143559; __utmt_a2=1; __utmt_b=1; __utmb=81143559.2.10.1706709838; _ga_FL2WFCGS0Y=GS1.1.1706709817.3.1.1706709838.0.0.0; _ga_38RQTHE076=GS1.1.1706709819.17.1.1706709838.0.0.0; __gads=ID=0554592d72201b43:T=1706548776:RT=1706709839:S=ALNI_MYAXodkQ_RUUnwvogWLuzRAOgsIRw; __gpi=UID=00000cf386237f10:T=1706548776:RT=1706709839:S=ALNI_MbCipQTizyo4ttg4DkAGd2qduIiIw; __eoi=ID=0eb93aed36a03300:T=1706632265:RT=1706709839:S=AA-AfjZlC4icUga4POBjQvB5Cqef; cto_bundle=GzvXhl9uYnFKcWxpQzBSbTZ3ckRsMkR1SVpCMEhqeks5YVk2ZHR6VnhJOGxORmdCQ3dPS3JvaHklMkJTS1p5MlMlMkZaazMxTUN1bGtNWDFlbVEya2V4R1JBN1RTOWs4RmRLV0dhYWZOcUVEZm4wVDFhTXE0TXV0NmtJQjJtQnlSZkprM3JsS0dvcHpmanE0Uk9yb0hOQVZ1TUJ2Z2dBJTNEJTNE',
+    ]
+    url = f'http://www.aastocks.com/tc/stocks/analysis/peer.aspx?symbol={stock_name}&t=6&hk=0'
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive',
+        'Cookie': random.choice(cookie_list).format(stock_name = stock_name),
+        'Host': 'www.aastocks.com',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+    }
+    try:
+        result = requests.get(
+            url, timeout=40, headers=headers, verify=False
+        ).text
+
+       
+        soup = BeautifulSoup(result, features='html.parser')
+
+        anchor = soup.find('div', text="市盈率")
+        PE_ratio=float(anchor.find_next_sibling().text.strip())
+        print(PE_ratio)
+        if not anchor:
+            # stock not found
+            return jsonify({
+                'error': 2,
+            })
+
+    #finding annual revenue growth
+        soup = BeautifulSoup(result, features='html.parser')
+        anchor = soup.find('table',{'id': 'tblTS2'})
+        x=anchor.find_all('td',{'class':'txt_r'})
+        i=0
+        annual_revenue_growth_list=[]
+        while i+1< len(x):
+            while i%10==2:
+                annual_revenue_growth_list.append(x[i].text.split())
+                i = i + 1
+            i = i + 1
+
+        if not anchor:
+            # stock not found
+            return jsonify({
+                'error': 2,
+            })    
+    except requests.exceptions.ConnectionError as e:
+        print(f'ERROR({symbol}): {e}')
+        return jsonify({
+            'error': 1,
+        })
+
+    
+    result = None
+    cookie_list = [
+        f'AAWS=; _ga=GA1.1.1111401661.1706548779; mLang=TC; NewChart=Mini_Color=1; AAWS2=; MasterSymbol={stock_name}; LatestRTQuotedStocks=02477%3B02511%3B09988; __utmz=177965731.1707041168.9.5.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/peer.aspx; CookiePolicyCheck=0; __utma=177965731.867252439.1706548775.1707041168.1707381172.10; __utmc=177965731; AALTP=1; _ga_MW096YVQH9=GS1.1.1707381174.5.0.1707381174.0.0.0; __utma=81143559.1648372063.1706548775.1707041168.1707381176.11; __utmc=81143559; __utmz=81143559.1707381176.11.9.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/; aa_cookie=65.181.65.72_5981_1707378871; __utmt_a3=1; __utmt_a2=1; __utmt_b=1; __gads=ID=0554592d72201b43:T=1706548776:RT=1707384352:S=ALNI_MYAXodkQ_RUUnwvogWLuzRAOgsIRw; __gpi=UID=00000cf386237f10:T=1706548776:RT=1707384352:S=ALNI_MbCipQTizyo4ttg4DkAGd2qduIiIw; __eoi=ID=0eb93aed36a03300:T=1706632265:RT=1707384352:S=AA-AfjZlC4icUga4POBjQvB5Cqef; __utmt_edu=1; cto_bundle=ysOOLF9uYnFKcWxpQzBSbTZ3ckRsMkR1SVpQUnNrVGxRRUJYODglMkI1MzJNd3JvUlYlMkZ6YUVNSW4yRkJGVGJ2R3F3ZUNhMVA1d2RRb3NkcndMbjJhUFgwY21nTmxzZEVuQUNUSnNTVURJWEhpJTJCbHVTVm51OXFIMFdEVm9BOFRueExoOEw2VmFOVzM4RWNPdFRlOWZLTm1XbEl1bFElM0QlM0Q; __utmb=177965731.26.10.1707381172; __utmb=81143559.52.9.1707384466426; _ga_FL2WFCGS0Y=GS1.1.1707381172.11.1.1707384552.0.0.0; _ga_38RQTHE076=GS1.1.1707381172.25.1.1707384553.0.0.0',
+    ]
+    url = f'http://www.aastocks.com/tc/stocks/analysis/peer.aspx?symbol={stock_name}'
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive',
+        'Cookie': random.choice(cookie_list).format(stock_name = stock_name),
+        'Host': 'www.aastocks.com',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+    }
+    try:
+        result = requests.get(
+            url, timeout=40, headers=headers, verify=False
+        ).text
+    # find pe and pb ratio
+        pe_ratio_list=[]
+        pb_ratio_list=[]
+        import test
+        for data in test.my_list:
+            pe_ratio_list.append(data.split(":")[1].split("&")[0].strip())
+            pb_ratio_list.append(data.split("&")[1].strip())
+        soup = BeautifulSoup(result, features='html.parser')
+        anchor = soup.find('table',{'id': 'tblTS2'})
+        x=anchor.find_all('td',{'class':'txt_r'})
+        if not anchor:
+                # stock not found
+                return jsonify({
+                    'error': 2,
+                })
+        i=0
+        while i+1<len(x):
+            while i%9==5:
+                pe_ratio_list.append(x[i].text.strip().replace("[", "").replace("]", ""))
+                pb_ratio_list.append(x[i+1].text.strip().replace("[", "").replace("]", ""))
+                i = i + 1
+            i = i + 1
+        
+        temp_pe_ratio_list = []
+        for pe_ratio in pe_ratio_list:
+            if pe_ratio=="無盈利"or pe_ratio== "N/A":
+                temp_pe_ratio_list.append(99999)
+            else:
+                temp_pe_ratio_list.append(float(pe_ratio.strip()))
+        print(temp_pe_ratio_list)
+        temp_pb_ratio_list = []
+        for pb_ratio in pb_ratio_list:
+            if  pb_ratio=="N/A":
+                pass
+            else:
+                temp_pb_ratio_list.append(float(pb_ratio.strip()))
+        print(temp_pb_ratio_list)
+
+        soup = BeautifulSoup(result, features='html.parser')
+        anchor = soup.find('table',{'id': 'tblTS2'})
+        x=anchor.find_all('td',{'class':'txt_r'})
+        # to change 
+        #soup = BeautifulSoup(result, features='html.parser')
+        #anchor = soup.find('table',{'id': 'tblTS2'})
+        #target_number = anchor.find_all('a',{'title':'f{stock_id}'}).find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling()
+        target_number = 18.46
+        sorted_numbers = sorted(temp_pe_ratio_list)  # Sort the list in ascending order
+        pe_ratio_rank = sorted_numbers.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
+        print(pe_ratio_rank)     
+        print(len(temp_pe_ratio_list))
+        # to change  
+        target_number = 1.39
+        sorted_numbers = sorted(temp_pb_ratio_list)  # Sort the list in ascending order
+        pb_ratio_rank = sorted_numbers.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
+        print(pb_ratio_rank)     
+        print(len(temp_pb_ratio_list))
+
+      ### if pe_ratio_rank != None and rate != None:
+               # return_list.append({
+                   # 'date': date,
+                   # 'splitDividend': split_dividend,
+                   # 'rate': rate,
+              #  })
+        #if not anchor:
+            # stock not found
+           # return jsonify({
+               # 'error': 2,
+            #})
+    except requests.exceptions.ConnectionError as e:
+        print(f'ERROR({symbol}): {e}')
+        return jsonify({
+            'error': 1,
+        })
+
+
+
+    return jsonify(return_list)
+
 # for api test
 # localhost:5000/rasa
 # {"sender": "Sender", "message": "阿里股價幾多？" }
