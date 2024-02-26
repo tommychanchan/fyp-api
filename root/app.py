@@ -870,20 +870,44 @@ def get_future():
         result = requests.get(
             url, timeout=40, headers=headers, verify=False
         ).text
-        soup = BeautifulSoup(result, features='html.parser')
-        anchor = soup.find('div', {'data-key': 'EPS'}).parent
-    #only can read stock that have 5 years or above history
-        three_year_ago_EPS=float(anchor.find_next_sibling().find_next_sibling().find_next_sibling().text.strip())
-        four_year_ago_EPS=float(anchor.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text.strip())
-        five_year_ago_EPS=float(anchor.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text.strip())
-        print("three_year_ago_EPS:"+str(three_year_ago_EPS)) 
-        print("four_year_ago_EPS:"+str(four_year_ago_EPS))
-        print("five_year_ago_EPS:"+str(five_year_ago_EPS))    
-
+    
+    #finding income of the revenue
         soup = BeautifulSoup(result, features='html.parser')
         anchor =soup.select('td.cfvalue.txt_r.cls.bold')
-        for 
-        print(anchor)
+        if(anchor[1].previous_sibling.previous_sibling.text.strip()[0]=="-"):
+
+            last_year_income = float(anchor[1].text.strip())
+
+            print(last_year_income)
+        '''else:
+
+        if(anchor[1].previous_sibling.previous_sibling.text.strip()=="盈利(百萬)"):
+            two_year_income = "N/A"
+        else:
+            two_year_income =float(anchor[1].previous_sibling.previous_sibling.text.strip())
+            if(anchor[1].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip()=="盈利(百萬)"):
+                three_year_ago_income = "N/A"
+            else:
+                three_year_ago_income = float(anchor[1].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip())
+        print(last_year_income)
+        print(two_year_income)
+        print(three_year_ago_income)'''
+
+    #finding EPS of the stock
+        soup = BeautifulSoup(result, features='html.parser')
+        anchor =soup.select('td.cfvalue.txt_r.cls.bold')
+        last_year_EPS = float(anchor[2].text.strip())
+        if(anchor[2].previous_sibling.previous_sibling.text.strip()=="每股盈利"):
+            two_year_EPS = "N/A"
+        else:
+            two_year_EPS =float(anchor[2].previous_sibling.previous_sibling.text.strip())
+            if(anchor[2].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip()=="每股盈利"):
+                three_year_ago_EPS = "N/A"
+            else:
+                three_year_ago_EPS = float(anchor[2].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip())
+        print(last_year_EPS)
+        print(two_year_EPS)
+        print(three_year_ago_EPS)
        
         if not anchor:
             # stock not found
@@ -922,7 +946,10 @@ def get_future():
         soup = BeautifulSoup(result, features='html.parser')
 
         anchor = soup.find('div', text="市盈率")
-        PE_ratio=float(anchor.find_next_sibling().text.strip())
+        if (anchor.find_next_sibling().text.strip()=='N/A'):
+            PE_ratio="N/A"        
+        else:
+            PE_ratio=float(anchor.find_next_sibling().text.strip())
         print(PE_ratio)
         if not anchor:
             # stock not found
