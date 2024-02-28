@@ -11,6 +11,9 @@ def get_current_datetime():
 def get_current_date():
     return datetime.datetime.combine(get_current_datetime(), datetime.time.min)
 
+def format_date(date):
+    return date.strftime('%Y-%m-%d')
+
 
 # convert from:
 # '9988.hk' to '09988'

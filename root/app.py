@@ -505,7 +505,7 @@ def save_portfolio():
     portfolio_col.insert_one({
         'userID': user_id,
         'buysell': buysell,
-        'date': date.replace('/', '-'),
+        'date': date,
         'price': price,
         'stock': stock,
         'stockNumber': stock_number,
@@ -531,19 +531,19 @@ def save_portfolio():
 # {"userID": "Sender"}
 # {"userID": "Sender2", "date": "2023-10-29"}
 # {"userID": "Sender2", "date": "2023-10-30"}
+# {"userID": "Sender2", "date": "2023-12-04"}
+# {"userID": "Sender2", "date": "2023-12-04", "ignoreLastSplit": true}
 @app.route('/current_portfolio', methods=['POST'])
 def current_portfolio():
     json_data = request.json
 
     user_id = json_data['userID']
     date = json_data.get('date')
-
-    #TODO: until date
-
-    error = 0
+    date = date if date else format_date(get_current_date())
+    ignore_last_split = json_data.get('ignoreLastSplit') == True
 
     actions = {}
-
+    print(ignore_last_split)
     for result in portfolio_col.find({'userID': user_id}, sort=[("_id", 1)]):
         if not result.get('stock') in actions:
             actions[result.get('stock')] = []
@@ -575,14 +575,18 @@ def current_portfolio():
                         'rate': datum['rate'],
                     })
 
-            actions[stock].sort(key=lambda x: x['date'])
+            actions[stock].sort(key=lambda x: (x['date'], x['buysell']))
             for action in actions[stock]:
+                if action['date'] > date:
+                    break
+
                 if action.get('buysell') == 'buy':
                     return_dict[stock] += action.get('stockNumber')
                 elif action.get('buysell') == 'sell':
                     return_dict[stock] -= action.get('stockNumber')
                 elif action.get('buysell') == 'split':
-                    return_dict[stock] /= action.get('rate')
+                    if not (ignore_last_split and action.get('date') == date):
+                        return_dict[stock] /= action.get('rate')
     except requests.exceptions.ConnectionError as e:
         print(f'ERROR({stock}): {e}')
 
