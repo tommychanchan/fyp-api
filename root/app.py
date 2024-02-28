@@ -1046,14 +1046,16 @@ def get_future():
                 pass
             else:
                 temp_pb_ratio_list.append(float(pb_ratio.strip()))
-        print(temp_pb_ratio_list)
 
         soup = BeautifulSoup(result, features='html.parser')
         anchor = soup.find('table',{'id': 'tblTS2'})
         x=anchor.find_all('td',{'class':'txt_r'})
         # to change 
         soup = BeautifulSoup(result, features='html.parser')
-        anchor = soup.find('title':'f{stock_id}')
+        link=f"/tc/stocks/quote/detail-quote.aspx?symbol={stock_name}"
+        print(link)
+        anchor = soup.find('a',{'href': link})
+        print(anchor)
         target_number = anchor.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text.strip()
         sorted_numbers = sorted(temp_pe_ratio_list)  # Sort the list in ascending order
         pe_ratio_rank = sorted_numbers.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
@@ -1065,6 +1067,27 @@ def get_future():
         pb_ratio_rank = sorted_numbers.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
         print(pb_ratio_rank)     
         print(len(temp_pb_ratio_list))
+
+        result = None
+    cookie_list = [
+        f'mLang=TC; _ga=GA1.1.1464946004.1708264002; NewChart=Mini_Color=1; AAWS2=; AAWS=; CookiePolicyCheck=0; MasterSymbol={stock_name}; LatestRTQuotedStocks=00001%3B00004%3B00005%3B02511%3B09988; __utmc=177965731; AALTP=1; _ga_MW096YVQH9=GS1.1.1709130890.6.0.1709130890.0.0.0; __utmc=81143559; aa_cookie=61.15.99.24_64375_1709136045; __utma=177965731.780197868.1708264002.1709130889.1709134710.9; __utmz=177965731.1709134710.9.4.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/peer.aspx; __utmt_a3=1; __utma=81143559.1464946004.1708264002.1709130891.1709134710.9; __utmz=81143559.1709134710.9.9.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/peer.aspx; __utmt_a2=1; __gads=ID=a9c009372c39cc84:T=1708264000:RT=1709134710:S=ALNI_MZAZTfN92pZOHyH9ksQpYursfF0-w; __gpi=UID=00000d09af28c7df:T=1708264000:RT=1709134710:S=ALNI_MYip_3NSn44fhZa_br93obuxL_W1g; __eoi=ID=2b67c1fcdaf92edd:T=1708264000:RT=1709134710:S=AA-AfjYNMLYr5qwpNPB_dHIlFob8; _ga_FL2WFCGS0Y=GS1.1.1709134708.10.1.1709134895.0.0.0; __utmb=177965731.4.10.1709134710; __utmb=81143559.4.10.1709134710; _ga_38RQTHE076=GS1.1.1709134708.10.1.1709134895.0.0.0; cto_bundle=FZj6EV9HenJaM3JWanRLQUVLaFdieG1kUEhmV3p1NHZOSUJuUmFOTUhuNmM3WE5EMGFjTEdraHFRR2hYWjd2RkFUVVNnZHRucDFSMFFKaVkwcGUlMkZoNXVEUHR6JTJGeTglMkJNbkhXWk5LVTVrTVpXdG1JRSUyQmZubWV2VzRrTXowT2JyTm1Cd3BKVlN0TURlcldZN1BYJTJCQjRpQ2xOV1pBJTNEJTNE',
+    ]
+    url = f'http://www.aastocks.com/tc/stocks/analysis/company-fundamental/profit-loss?symbol={stock_name}'
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive',
+        'Cookie': random.choice(cookie_list).format(stock_name = stock_name),
+        'Host': 'www.aastocks.com',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+    }
+    try:
+        result = requests.get(
+            url, timeout=40, headers=headers, verify=False
+        ).text
 
       ### if pe_ratio_rank != None and rate != None:
                # return_list.append({
