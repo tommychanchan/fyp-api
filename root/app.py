@@ -874,13 +874,12 @@ def get_future():
     #finding income of the revenue
         soup = BeautifulSoup(result, features='html.parser')
         anchor =soup.select('td.cfvalue.txt_r.cls.bold')
-        if(anchor[1].previous_sibling.previous_sibling.text.strip()[0]=="-"):
-
+        if(anchor[1].text.strip()[0]=="-"):
+            print("-")
+        '''
             last_year_income = float(anchor[1].text.strip())
-
             print(last_year_income)
-        '''else:
-
+        else:
         if(anchor[1].previous_sibling.previous_sibling.text.strip()=="盈利(百萬)"):
             two_year_income = "N/A"
         else:
@@ -891,7 +890,8 @@ def get_future():
                 three_year_ago_income = float(anchor[1].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip())
         print(last_year_income)
         print(two_year_income)
-        print(three_year_ago_income)'''
+        print(three_year_ago_income)
+        '''
 
     #finding EPS of the stock
         soup = BeautifulSoup(result, features='html.parser')
