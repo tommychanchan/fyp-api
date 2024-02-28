@@ -28,12 +28,13 @@ try:
     temp_list = json.loads((result[result.index('tsData')+8:result.index('];', result.index('tsData'))+1]).strip().replace('d0', '"d0"').replace('d1', '"d1"').replace('d2', '"d2"').replace('d3', '"d3"').replace('d4', '"d4"').replace('d5', '"d5"').replace('d6', '"d6"').replace('d7', '"d7"').replace('d8', '"d8"').replace('d9', '"d9"').replace('"d1"0', '"d10"'))
     print('Length:', len(temp_list))
     temp_soup = None
+    my_list=[]
     for datum in temp_list:
         temp_soup = BeautifulSoup(datum['d0'], features='html.parser')
         stock_id = temp_soup.find('a').text[:-3]
         pe_ratio = datum['d6']  # 市盈率: can be "N/A"/"無盈利"/"33.06"...
         pb_ratio = datum['d7']  # 市賬率: can be "N/A"/"3.43"...
         print(f'{stock_id}: {pe_ratio} & {pb_ratio}')
-
+        my_list.append(f'{stock_id}: {pe_ratio} & {pb_ratio}')
 except requests.exceptions.ConnectionError as e:
     print(f'ERROR: {e}')

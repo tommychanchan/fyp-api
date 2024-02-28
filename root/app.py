@@ -871,44 +871,49 @@ def get_future():
             url, timeout=40, headers=headers, verify=False
         ).text
     
-    #finding income of the revenue
+    #finding the revenue
         soup = BeautifulSoup(result, features='html.parser')
         anchor =soup.select('td.cfvalue.txt_r.cls.bold')
-        if(anchor[1].text.strip()[0]=="-"):
-            print("-")
-        '''
-            last_year_income = float(anchor[1].text.strip())
-            print(last_year_income)
+        last_year_revenue = anchor[1].text.strip()
+        if(anchor[1].previous_sibling.previous_sibling.text.strip()=="盈利(百萬)"or "-"):
+            two_year_revenue = "N/A"
+            three_year_revenue = "N/A"
         else:
-        if(anchor[1].previous_sibling.previous_sibling.text.strip()=="盈利(百萬)"):
-            two_year_income = "N/A"
-        else:
-            two_year_income =float(anchor[1].previous_sibling.previous_sibling.text.strip())
-            if(anchor[1].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip()=="盈利(百萬)"):
-                three_year_ago_income = "N/A"
+            two_year_revenue =anchor[1].previous_sibling.previous_sibling.text.strip()
+            if(anchor[1].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip()=="盈利(百萬)"or "-"):
+                three_year_revenue = "N/A"
             else:
-                three_year_ago_income = float(anchor[1].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip())
-        print(last_year_income)
-        print(two_year_income)
-        print(three_year_ago_income)
-        '''
+                three_year_revenue = anchor[1].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip()
+        if(last_year_revenue[0]=='-'):
+            last_year_revenue=last_year_revenue[1:]
+            last_year_revenue=float(last_year_revenue)*(-1)
+        if(last_year_revenue[0]=='-'):
+            two_year_revenue=two_year_revenue[1:]
+            two_year_revenue=float(two_year_revenue)*(-1)
+        if(three_year_revenue[0]=='-'):
+            three_year_revenue=three_year_revenue[1:]
+            three_year_revenue=float(three_year_revenue)*(-1)
+        print(last_year_revenue)
+        print(two_year_revenue)
+        print(three_year_revenue)
+        print("----------------")
 
     #finding EPS of the stock
         soup = BeautifulSoup(result, features='html.parser')
         anchor =soup.select('td.cfvalue.txt_r.cls.bold')
-        last_year_EPS = float(anchor[2].text.strip())
+        last_year_EPS = anchor[2].text.strip()
         if(anchor[2].previous_sibling.previous_sibling.text.strip()=="每股盈利"):
             two_year_EPS = "N/A"
         else:
-            two_year_EPS =float(anchor[2].previous_sibling.previous_sibling.text.strip())
+            two_year_EPS =anchor[2].previous_sibling.previous_sibling.text.strip()
             if(anchor[2].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip()=="每股盈利"):
-                three_year_ago_EPS = "N/A"
+                three_year_EPS = "N/A"
             else:
-                three_year_ago_EPS = float(anchor[2].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip())
+                three_year_EPS = anchor[2].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip()
         print(last_year_EPS)
         print(two_year_EPS)
-        print(three_year_ago_EPS)
-       
+        print(three_year_EPS)
+        print("----------------")
         if not anchor:
             # stock not found
             return jsonify({
@@ -1043,10 +1048,9 @@ def get_future():
         anchor = soup.find('table',{'id': 'tblTS2'})
         x=anchor.find_all('td',{'class':'txt_r'})
         # to change 
-        #soup = BeautifulSoup(result, features='html.parser')
-        #anchor = soup.find('table',{'id': 'tblTS2'})
-        #target_number = anchor.find_all('a',{'title':'f{stock_id}'}).find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling()
-        target_number = 18.46
+        soup = BeautifulSoup(result, features='html.parser')
+        anchor = soup.find('title':'f{stock_id}')
+        target_number = anchor.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text.strip()
         sorted_numbers = sorted(temp_pe_ratio_list)  # Sort the list in ascending order
         pe_ratio_rank = sorted_numbers.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
         print(pe_ratio_rank)     
