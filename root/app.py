@@ -512,7 +512,7 @@ def ta():
 
 # for api test
 # localhost:5000/save_portfolio
-# {"userID": "Sender", "buysell": "buy", "date": "2000/01/01", "price": 12.34, "stock": "0001.hk", "stockNumber": 100}
+# {"userID": "Sender", "buysell": "buy", "date": "2000-01-01", "price": 12.34, "stock": "0001.hk", "stockNumber": 100}
 @app.route('/save_portfolio', methods=['POST'])
 def save_portfolio():
     json_data = request.json
@@ -566,7 +566,7 @@ def current_portfolio():
     ignore_last_split = json_data.get('ignoreLastSplit') == True
 
     actions = {}
-    for result in portfolio_col.find({'userID': user_id}, sort=[("_id", 1)]):
+    for result in portfolio_col.find({'userID': user_id}, sort=[("date", 1), ("buysell", 1)]):
         if not result.get('stock') in actions:
             actions[result.get('stock')] = []
         actions[result.get('stock')].append(result)
@@ -613,6 +613,67 @@ def current_portfolio():
         print(f'ERROR({stock}): {e}')
 
     return jsonify(return_dict)
+
+
+
+
+
+
+
+
+# view users' transaction record
+# -- parameters --
+# userID
+# -- return --
+# actions: a list of transaction/split information
+
+# for api test
+# localhost:5000/transaction_record
+# {"userID": "Sender"}
+@app.route('/transaction_record', methods=['POST'])
+def transaction_record():
+    json_data = request.json
+
+    user_id = json_data['userID']
+
+    actions = [x for x in portfolio_col.find({'userID': user_id})]
+
+    stocks = list({x.get('stock') for x in portfolio_col.find({'userID': user_id})})
+
+    url = f"http://localhost:{PORT}/stock_split"
+    headers = {}
+    payload = {'stocks': stocks}
+    try:
+        result = requests.post(
+            url, timeout=40, headers=headers, json=payload, verify=False
+        ).text
+
+        result_json = json.loads(result)
+        if result_json.get('error') == 1:
+            # cannot connect to aastocks server
+            print('ERROR: Cannot connect to AASTOCKS server.')
+        for stock in result_json.keys():
+            if type(result_json[stock]) != list and result_json[stock].get('error') == 2:
+                # stock ID not found
+                continue
+
+            for datum in result_json[stock]:
+                if datum['splitDividend'] == 'split':
+                    actions.append({
+                        'buysell': 'split',
+                        'date': datum['date'],
+                        'rate': datum['rate'],
+                        'stock': stock,
+                    })
+
+            actions.sort(key=lambda x: (x['date'], x['buysell']))
+    except requests.exceptions.ConnectionError as e:
+        print(f'ERROR({stock}): {e}')
+
+    return parse_json({
+        'actions': actions,
+    })
+
 
 
 
