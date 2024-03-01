@@ -337,8 +337,31 @@ def ta():
             continue
 
         data['Close'] = data['Previous Close'].shift(-1)
-        data.dropna(subset = ['Close'], inplace=True)
         data['Adj Close'] = data['Close']
+
+        previous_close = None
+        url = f"http://localhost:{PORT}/stock_info"
+        headers = {}
+        payload = {'stocks': [yf]}
+        try:
+            result = requests.post(
+                url, timeout=40, headers=headers, json=payload, verify=False
+            ).text
+
+            result_json = json.loads(result)
+
+            if len(result_json):
+                previous_close = result_json[0].get('previousClose')
+        except requests.exceptions.ConnectionError as e:
+            print(f'ERROR({yf}): {e}')
+
+        if previous_close:
+            data.iloc[-1, data.columns.get_loc('Adj Close')] = previous_close
+        else:
+            data.dropna(subset = ['Close'], inplace=True)
+        data.dropna(subset = ['Adj Close'], inplace=True)
+
+
         url = f"http://localhost:{PORT}/stock_split"
         headers = {}
         payload = {'stocks': [yf]}
@@ -521,9 +544,9 @@ def save_portfolio():
 
 # view users' current portfolio
 # -- parameters --
-# userID, [date]
+# userID, [date(today)], [ignoreLastSplit(false)]
 # -- return --
-# an object with current stock number for each stock
+# an object with current stock number for each stock up to certain date
 # e.g. {"0001.hk": 2000, "0002.hk": 500}
 
 # for api test
@@ -543,7 +566,6 @@ def current_portfolio():
     ignore_last_split = json_data.get('ignoreLastSplit') == True
 
     actions = {}
-    print(ignore_last_split)
     for result in portfolio_col.find({'userID': user_id}, sort=[("_id", 1)]):
         if not result.get('stock') in actions:
             actions[result.get('stock')] = []
