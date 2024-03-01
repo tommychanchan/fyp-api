@@ -825,7 +825,7 @@ def stock_split():
 
 # for api test
 # localhost:5000/get_future
-# {"stock": "09988.hk"}
+#       
 @app.route('/get_future', methods=['POST'])
 def get_future():
     json_data = request.json
@@ -959,6 +959,32 @@ def get_future():
         print(last_year_EPS)
         print(two_year_EPS)
         print(three_year_EPS)
+
+        if(last_year_EPS !="N/A" and two_year_EPS !="N/A" and three_year_EPS !="N/A" ):
+            if(last_year_EPS>two_year_EPS and two_year_EPS>three_year_EPS):
+                EPS_growth=1 #(increasing)
+            if(last_year_EPS<=two_year_EPS and two_year_EPS>=three_year_EPS):
+                EPS_growth=2 #(overall increasing)
+            if(last_year_EPS>=two_year_EPS and two_year_EPS<=three_year_EPS):
+                EPS_growth=2 #(overall increasing)
+            if(last_year_EPS<=two_year_EPS and two_year_EPS>=three_year_EPS):
+                EPS_growth=3 #(average)
+            if(last_year_EPS>=two_year_EPS and two_year_EPS<=three_year_EPS):
+                EPS_growth=5 #(overall decreasing) 
+            if(last_year_EPS<two_year_EPS and two_year_EPS<three_year_EPS):
+                EPS_growth=6 #(decreasing)
+        print('EPS overall:')
+        print(EPS_growth)
+        '''
+        1 2 3 --> 1 increasing
+        1 3 2 --> 2 overall increasing
+        2 1 3 --> 2 overall increasing
+        2 3 1 --> 3 average 
+        3 1 2 --> 4 overall decreasing 
+        3 2 1 --> 5 decreasing
+        '''
+
+
         print("----------------")
         if not anchor:
             # stock not found
@@ -1025,15 +1051,12 @@ def get_future():
                 annual_revenue_growth_list.append(x[i].text)
                 i = i + 1
             i = i + 1
-        print(annual_revenue_growth_list)
         temp_ARG_list=[]
         for ARG in annual_revenue_growth_list:
             if  ARG=="N/A":
                 pass
             else:
                 temp_ARG_list.append(float(ARG.strip().strip("%"))/100)
-
-        print(temp_ARG_list)
         if not anchor:
             # stock not found
             return jsonify({
@@ -1102,6 +1125,10 @@ def get_future():
             else:
                 temp_pb_ratio_list.append(float(pb_ratio.strip()))
 
+        soup = BeautifulSoup(result, features='html.parser')
+        anchor = soup.find('span',{'class': 'PEAvgShort'})
+        average_pe_ratio=anchor.parent.find_next_sibling().text.strip()
+        
 
         url = f"http://localhost:{PORT}/stock_info"
         headers = {}
@@ -1116,39 +1143,67 @@ def get_future():
                 # cannot connect to aastocks server
                 print('ERROR: Cannot connect to AASTOCKS server.')
             
-            print('市盈率:')
+            '''print('市盈率:')
             print(result_json.get('priceToEarningsRatio'))
             print('市賬率:')
-            print(result_json.get('priceToBookRatio'))
+            print(result_json.get('priceToBookRatio'))'''
         except requests.exceptions.ConnectionError as e:
             print(f'ERROR({stock}): {e}')
-
-        # to change 
+ 
         # find pe ratio rank and number of class in same categories
         target_number = float(stock_pe_ratio)
-        sorted_numbers = sorted(temp_pe_ratio_list) 
+        sorted_pe_ratio_list = sorted(temp_pe_ratio_list) 
         # Sort the list in ascending order
-        pe_ratio_rank = sorted_numbers.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
+        pe_ratio_rank = sorted_pe_ratio_list.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
         print(pe_ratio_rank)     
         print(len(temp_pe_ratio_list))
+        print(stock_pe_ratio)
+        if(stock_pe_ratio>average_pe_ratio):
+            pe_ratio_categories=1 # 市盈率超過行業平均值
+        if(average_pe_ratio==stock_pe_ratio):
+            pe_ratio_categories=2 # 市盈率等於行業平均值
+        if(stock_pe_ratio<average_pe_ratio):
+            pe_ratio_categories=3 # 市盈率低於行業平均值
+        print(pe_ratio_categories)
         # to change  
 
         # find pb ratio rank and number of class in same categories
         target_number = float(stock_pb_ratio)
-        sorted_numbers = sorted(temp_pb_ratio_list)  # Sort the list in ascending order
-        pb_ratio_rank = sorted_numbers.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
+        sorted_pb_ratio_list = sorted(temp_pb_ratio_list)  # Sort the list in ascending order
+        pb_ratio_rank = sorted_pb_ratio_list.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
         print(pb_ratio_rank)     
         print(len(temp_pb_ratio_list))
+        total_pb_ratio=0
+        for pb_ratio in sorted_pb_ratio_list:
+            total_pb_ratio=total_pb_ratio+pb_ratio
+        average_pb_ratio=total_pb_ratio/len(temp_pb_ratio_list)
+        stock_pb_ratio=float(stock_pb_ratio)
+        if(stock_pb_ratio>average_pb_ratio):
+            pb_ratio_categories=1 # 市賬率超過行業平均值
+        if(average_pe_ratio==stock_pb_ratio):
+            pb_ratio_categories=2 # 市賬率等於行業平均值
+        if(stock_pb_ratio<average_pb_ratio):
+            pb_ratio_categories=3 # 市賬率低於行業平均值
+        print(pb_ratio_categories)
 
         # find annual revenue growth (年度收入增長) of class in same categories
         target_number = float(stock_ARG.strip().strip("%"))/100 
-        print(target_number)
-        sorted_numbers = sorted(temp_ARG_list) 
-        print(sorted_numbers) # Sort the list in ascending order
-        ARG_rank = sorted_numbers.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
+        sorted_ARG_list = sorted(temp_ARG_list,reverse=True) 
+        ARG_rank = sorted_ARG_list.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
         print(ARG_rank)     
-        print(len(temp_ARG_list))
-
+        print(len(sort_ARG_list))
+        total_pb_ratio=0
+        for pb_ratio in sorted_pb_ratio_list:
+            total_pb_ratio=total_pb_ratio+pb_ratio
+        average_pb_ratio=total_pb_ratio/len(temp_pb_ratio_list)
+        stock_pb_ratio=float(stock_pb_ratio)
+        if(stock_pb_ratio>average_pb_ratio):
+            pb_ratio_categories=1 # 市賬率超過行業平均值
+        if(average_pe_ratio==stock_pb_ratio):
+            pb_ratio_categories=2 # 市賬率等於行業平均值
+        if(stock_pb_ratio<average_pb_ratio):
+            pb_ratio_categories=3 # 市賬率低於行業平均值
+        print(pb_ratio_categories)
     except requests.exceptions.ConnectionError as e:
         print(f'ERROR({symbol}): {e}')
         return jsonify({
