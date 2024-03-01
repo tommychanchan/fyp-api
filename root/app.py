@@ -836,26 +836,6 @@ def stock_split():
 
     return parse_json(return_dict)
 
-
-
-
-
-
-# wrapper of rasa api
-# -- parameters --
-# sender: the unique user ID
-# message: the message of the sender
-# -- return --
-# return what rasa api return directly
-# e.g.
-# [{
-#     "recipient_id": "Sender",
-#     "text": "\u963f\u91cc\u5df4\u5df4\uff0d\uff33\uff37(09988) \u7684\u73fe\u50f9\u662f 71.3\u3002"
-# }]
-# -- error messages --
-# 1: cannot connect to server
-
-
 # get stock EPS/年度收入增長
 # -- parameters --
 # stock: stock id (e.g. "9988.hk"/"0008.hk")
@@ -875,6 +855,68 @@ def get_future():
     stock_name = yf_to_aa(symbol)
     return_list = []
 
+    url = f'http://www.aastocks.com/tc/stocks/analysis/peer.aspx?symbol={stock_name}'
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive',
+        'Cookie': f'aa_cookie=1.65.150.95_64710_1706931042; MasterSymbol={stock_name}; LatestRTQuotedStocks={stock_name}; _ga=GA1.1.962392854.1706935565; __utma=177965731.962392854.1706935565.1706935566.1706935566.1; __utmc=177965731; __utmz=177965731.1706935566.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmt_a3=1; __utma=81143559.962392854.1706935565.1706935566.1706935566.1; __utmc=81143559; __utmz=81143559.1706935566.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmt_a2=1; __utmt_b=1; CookiePolicyCheck=0; __utmb=177965731.2.10.1706935566; __utmb=81143559.4.10.1706935566; _ga_FL2WFCGS0Y=GS1.1.1706935565.1.1.1706935604.0.0.0; _ga_38RQTHE076=GS1.1.1706935565.1.1.1706935604.0.0.0',
+        'Host': 'www.aastocks.com',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+    }
+    try:
+        result = requests.get(
+            url, timeout=40, headers=headers, verify=False
+        ).text
+
+        temp_list = json.loads((result[result.index('tsData')+8:result.index('];', result.index('tsData'))+1]).strip().replace('d0', '"d0"').replace('d1', '"d1"').replace('d2', '"d2"').replace('d3', '"d3"').replace('d4', '"d4"').replace('d5', '"d5"').replace('d6', '"d6"').replace('d7', '"d7"').replace('d8', '"d8"').replace('d9', '"d9"').replace('"d1"0', '"d10"'))
+        temp_soup = None
+        pe_pb_list=[]
+        for datum in temp_list:
+            temp_soup = BeautifulSoup(datum['d0'], features='html.parser')
+            stock_id = temp_soup.find('a').text[:-3]
+            pe_ratio = datum['d6']  # 市盈率: can be "N/A"/"無盈利"/"33.06"...
+            pb_ratio = datum['d7']  # 市賬率: can be "N/A"/"3.43"...
+            if f'{stock_id}' == f'{stock_name}':
+                stock_pe_ratio=pe_ratio
+                stock_pb_ratio=pb_ratio
+            pe_pb_list.append(f'{stock_id}: {pe_ratio} & {pb_ratio}')
+    
+    except requests.exceptions.ConnectionError as e:
+        print(f'ERROR: {e}')
+
+    url = f'http://www.aastocks.com/tc/stocks/analysis/peer.aspx?symbol={stock_name}&t=6&hk=0'
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive',
+        'Cookie': f'mLang=TC; _ga=GA1.1.1464946004.1708264002; NewChart=Mini_Color=1; AAWS2=; AAWS=; CookiePolicyCheck=0; __utmc=177965731; AALTP=1; _ga_MW096YVQH9=GS1.1.1709198785.7.0.1709198785.0.0.0; __utmc=81143559; aa_cookie=118.143.134.154_61061_1709196475; __utma=177965731.780197868.1708264002.1709198784.1709202045.11; __utmz=177965731.1709202045.11.5.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/peer.aspx; __utma=81143559.1464946004.1708264002.1709198786.1709202045.11; __utmz=81143559.1709202045.11.11.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/peer.aspx; MasterSymbol=09988; LatestRTQuotedStocks=00001%3B00004%3B00005%3B02511%3B00776%3B09988; __utmt_a3=1; __utmt_a2=1; __utmt_b=1; __gads=ID=a9c009372c39cc84:T=1708264000:RT=1709204369:S=ALNI_MZAZTfN92pZOHyH9ksQpYursfF0-w; __gpi=UID=00000d09af28c7df:T=1708264000:RT=1709204369:S=ALNI_MYip_3NSn44fhZa_br93obuxL_W1g; __eoi=ID=2b67c1fcdaf92edd:T=1708264000:RT=1709204369:S=AA-AfjYNMLYr5qwpNPB_dHIlFob8; __utmb=177965731.27.10.1709202045; __utmb=81143559.51.10.1709202045; _ga_FL2WFCGS0Y=GS1.1.1709202044.12.1.1709204512.0.0.0; _ga_38RQTHE076=GS1.1.1709202044.12.1.1709204513.0.0.0; cto_bundle=vJmjp19HenJaM3JWanRLQUVLaFdieG1kUEhYNUhhOHo5ZU5NYlpMaXJKSXklMkJoelNPRnBKWVlPUkpCU1J0M3ZGJTJGdFNKMHdMNnpRREF5d1RMWldTYU9yaFQya015NjhtQjUlMkIweFlNUkVSTmFmVmFXWFMyUUlNWFY3NEdKbjJLYTc2ZVAlMkJQME9nZzduVzdrbmJTWW9ISVUyeTlZUSUzRCUzRA',
+        'Host': 'www.aastocks.com',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+    }
+    try:
+        result = requests.get(
+            url, timeout=40, headers=headers, verify=False
+        ).text
+
+        temp_list = json.loads((result[result.index('tsData')+8:result.index('];', result.index('tsData'))+1]).strip().replace('d0', '"d0"').replace('d1', '"d1"').replace('d2', '"d2"').replace('d3', '"d3"').replace('d4', '"d4"').replace('d5', '"d5"').replace('d6', '"d6"').replace('d7', '"d7"').replace('d8', '"d8"').replace('d9', '"d9"').replace('"d1"0', '"d10"'))
+        temp_soup = None
+        ARG_list=[]
+        for datum in temp_list:
+            temp_soup = BeautifulSoup(datum['d0'], features='html.parser')
+            stock_id = temp_soup.find('a').text[:-3]
+            ARG = datum['d3']  # 年度收入增長: can be "+"/"N/A"/"-"...
+            if f'{stock_id}'==f'{stock_name}':
+                stock_ARG=ARG
+            ARG_list.append(f'{stock_id}: {ARG}')
+    except requests.exceptions.ConnectionError as e:
+        print(f'ERROR: {e}')
     result = None
     cookie_list = [
         f'MasterSymbol={stock_name}; LatestRTQuotedStocks={stock_name}; AAWS=; __utmz=177965731.1706548775.1.1.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/company-fundamental/; _ga=GA1.1.1111401661.1706548779; mLang=TC; CookiePolicyCheck=0; __utma=177965731.867252439.1706548775.1706632264.1706709816.3; __utmc=177965731; __utmc=81143559; cto_bundle=GzvXhl9uYnFKcWxpQzBSbTZ3ckRsMkR1SVpCMEhqeks5YVk2ZHR6VnhJOGxORmdCQ3dPS3JvaHklMkJTS1p5MlMlMkZaazMxTUN1bGtNWDFlbVEya2V4R1JBN1RTOWs4RmRLV0dhYWZOcUVEZm4wVDFhTXE0TXV0NmtJQjJtQnlSZkprM3JsS0dvcHpmanE0Uk9yb0hOQVZ1TUJ2Z2dBJTNEJTNE; _ga_MW096YVQH9=GS1.1.1706710420.1.0.1706710420.0.0.0; NewChart=Mini_Color=1; __utmt_a3=1; __utma=81143559.1648372063.1706548775.1706709838.1706712121.4; __utmz=81143559.1706712121.4.2.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/peer.aspx; __utmt_a2=1; __utmt_b=1; aa_cookie=27.109.218.9_63070_1706714877; __gads=ID=0554592d72201b43:T=1706548776:RT=1706712517:S=ALNI_MYAXodkQ_RUUnwvogWLuzRAOgsIRw; __gpi=UID=00000cf386237f10:T=1706548776:RT=1706712517:S=ALNI_MbCipQTizyo4ttg4DkAGd2qduIiIw; __eoi=ID=0eb93aed36a03300:T=1706632265:RT=1706712517:S=AA-AfjZlC4icUga4POBjQvB5Cqef; __utmb=177965731.18.10.1706709816; __utmb=81143559.18.10.1706712121; _ga_FL2WFCGS0Y=GS1.1.1706709817.3.1.1706712630.0.0.0; _ga_38RQTHE076=GS1.1.1706709819.17.1.1706712631.0.0.0',
@@ -897,44 +939,49 @@ def get_future():
             url, timeout=40, headers=headers, verify=False
         ).text
     
-    #finding income of the revenue
+        #finding the revenue of the stock
         soup = BeautifulSoup(result, features='html.parser')
         anchor =soup.select('td.cfvalue.txt_r.cls.bold')
-        if(anchor[1].previous_sibling.previous_sibling.text.strip()[0]=="-"):
-
-            last_year_income = float(anchor[1].text.strip())
-
-            print(last_year_income)
-        '''else:
-
-        if(anchor[1].previous_sibling.previous_sibling.text.strip()=="盈利(百萬)"):
-            two_year_income = "N/A"
+        last_year_revenue = anchor[1].text.strip()
+        if(anchor[1].previous_sibling.previous_sibling.text.strip()=="盈利(百萬)"or "-"):
+            two_year_revenue = "N/A"
+            three_year_revenue = "N/A"
         else:
-            two_year_income =float(anchor[1].previous_sibling.previous_sibling.text.strip())
-            if(anchor[1].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip()=="盈利(百萬)"):
-                three_year_ago_income = "N/A"
+            two_year_revenue =anchor[1].previous_sibling.previous_sibling.text.strip()
+            if(anchor[1].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip()=="盈利(百萬)"or "-"):
+                three_year_revenue = "N/A"
             else:
-                three_year_ago_income = float(anchor[1].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip())
-        print(last_year_income)
-        print(two_year_income)
-        print(three_year_ago_income)'''
+                three_year_revenue = anchor[1].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip()
+        if(last_year_revenue[0]=='-'):
+            last_year_revenue=last_year_revenue[1:]
+            last_year_revenue=float(last_year_revenue)*(-1)
+        if(last_year_revenue[0]=='-'):
+            two_year_revenue=two_year_revenue[1:]
+            two_year_revenue=float(two_year_revenue)*(-1)
+        if(three_year_revenue[0]=='-'):
+            three_year_revenue=three_year_revenue[1:]
+            three_year_revenue=float(three_year_revenue)*(-1)
+        print(last_year_revenue)
+        print(two_year_revenue)
+        print(three_year_revenue)
+        print("----------------")
 
-    #finding EPS of the stock
+        #finding EPS of the stock
         soup = BeautifulSoup(result, features='html.parser')
         anchor =soup.select('td.cfvalue.txt_r.cls.bold')
-        last_year_EPS = float(anchor[2].text.strip())
+        last_year_EPS = anchor[2].text.strip()
         if(anchor[2].previous_sibling.previous_sibling.text.strip()=="每股盈利"):
             two_year_EPS = "N/A"
         else:
-            two_year_EPS =float(anchor[2].previous_sibling.previous_sibling.text.strip())
+            two_year_EPS =anchor[2].previous_sibling.previous_sibling.text.strip()
             if(anchor[2].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip()=="每股盈利"):
-                three_year_ago_EPS = "N/A"
+                three_year_EPS = "N/A"
             else:
-                three_year_ago_EPS = float(anchor[2].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip())
+                three_year_EPS = anchor[2].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip()
         print(last_year_EPS)
         print(two_year_EPS)
-        print(three_year_ago_EPS)
-       
+        print(three_year_EPS)
+        print("----------------")
         if not anchor:
             # stock not found
             return jsonify({
@@ -968,9 +1015,8 @@ def get_future():
             url, timeout=40, headers=headers, verify=False
         ).text
 
-       
+        #find pb_ratio of a stock
         soup = BeautifulSoup(result, features='html.parser')
-
         anchor = soup.find('div', text="市盈率")
         if (anchor.find_next_sibling().text.strip()=='N/A'):
             PE_ratio="N/A"        
@@ -983,18 +1029,33 @@ def get_future():
                 'error': 2,
             })
 
-    #finding annual revenue growth
+        #finding annual revenue growth (年度收入增長)
+        annual_revenue_growth_list=[]
+        for data in ARG_list:
+            annual_revenue_growth_list.append(data.split(":")[1].strip())
         soup = BeautifulSoup(result, features='html.parser')
         anchor = soup.find('table',{'id': 'tblTS2'})
         x=anchor.find_all('td',{'class':'txt_r'})
+        if not anchor:
+                # stock not found
+                return jsonify({
+                    'error': 2,
+                })
         i=0
-        annual_revenue_growth_list=[]
         while i+1< len(x):
             while i%10==2:
-                annual_revenue_growth_list.append(x[i].text.split())
+                annual_revenue_growth_list.append(x[i].text)
                 i = i + 1
             i = i + 1
+        print(annual_revenue_growth_list)
+        temp_ARG_list=[]
+        for ARG in annual_revenue_growth_list:
+            if  ARG=="N/A":
+                pass
+            else:
+                temp_ARG_list.append(float(ARG.strip().strip("%"))/100)
 
+        print(temp_ARG_list)
         if not anchor:
             # stock not found
             return jsonify({
@@ -1027,11 +1088,11 @@ def get_future():
         result = requests.get(
             url, timeout=40, headers=headers, verify=False
         ).text
-    # find pe and pb ratio
+
+    # find pe and pb ratio in same categories
         pe_ratio_list=[]
         pb_ratio_list=[]
-        import test
-        for data in test.my_list:
+        for data in pe_pb_list:
             pe_ratio_list.append(data.split(":")[1].split("&")[0].strip())
             pb_ratio_list.append(data.split("&")[1].strip())
         soup = BeautifulSoup(result, features='html.parser')
@@ -1056,34 +1117,66 @@ def get_future():
                 temp_pe_ratio_list.append(99999)
             else:
                 temp_pe_ratio_list.append(float(pe_ratio.strip()))
-        print(temp_pe_ratio_list)
         temp_pb_ratio_list = []
         for pb_ratio in pb_ratio_list:
             if  pb_ratio=="N/A":
                 pass
             else:
                 temp_pb_ratio_list.append(float(pb_ratio.strip()))
-        print(temp_pb_ratio_list)
 
-        soup = BeautifulSoup(result, features='html.parser')
-        anchor = soup.find('table',{'id': 'tblTS2'})
-        x=anchor.find_all('td',{'class':'txt_r'})
+
+        url = f"http://localhost:{PORT}/stock_info"
+        headers = {}
+        payload = {'stocks': ['9988.hk']}
+        try:
+            result = requests.post(
+                url, timeout=40, headers=headers, json=payload, verify=False
+            ).text
+
+            result_json = json.loads(result)[0]
+            if result_json.get('error') == 1:
+                # cannot connect to aastocks server
+                print('ERROR: Cannot connect to AASTOCKS server.')
+            
+            print('市盈率:')
+            print(result_json.get('priceToEarningsRatio'))
+            print('市賬率:')
+            print(result_json.get('priceToBookRatio'))
+        except requests.exceptions.ConnectionError as e:
+            print(f'ERROR({stock}): {e}')
+
         # to change 
-        #soup = BeautifulSoup(result, features='html.parser')
-        #anchor = soup.find('table',{'id': 'tblTS2'})
-        #target_number = anchor.find_all('a',{'title':'f{stock_id}'}).find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling()
-        target_number = 18.46
-        sorted_numbers = sorted(temp_pe_ratio_list)  # Sort the list in ascending order
+        # find pe ratio rank and number of class in same categories
+        target_number = float(stock_pe_ratio)
+        sorted_numbers = sorted(temp_pe_ratio_list) 
+        # Sort the list in ascending order
         pe_ratio_rank = sorted_numbers.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
         print(pe_ratio_rank)     
         print(len(temp_pe_ratio_list))
         # to change  
-        target_number = 1.39
+
+        # find pb ratio rank and number of class in same categories
+        target_number = float(stock_pb_ratio)
         sorted_numbers = sorted(temp_pb_ratio_list)  # Sort the list in ascending order
         pb_ratio_rank = sorted_numbers.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
         print(pb_ratio_rank)     
         print(len(temp_pb_ratio_list))
 
+        # find annual revenue growth (年度收入增長) of class in same categories
+        target_number = float(stock_ARG.strip().strip("%"))/100 
+        print(target_number)
+        sorted_numbers = sorted(temp_ARG_list) 
+        print(sorted_numbers) # Sort the list in ascending order
+        ARG_rank = sorted_numbers.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
+        print(ARG_rank)     
+        print(len(temp_ARG_list))
+
+    except requests.exceptions.ConnectionError as e:
+        print(f'ERROR({symbol}): {e}')
+        return jsonify({
+            'error': 1,
+        })
+        
       ### if pe_ratio_rank != None and rate != None:
                # return_list.append({
                    # 'date': date,
@@ -1104,6 +1197,25 @@ def get_future():
 
 
     return jsonify(return_list)
+
+
+
+# wrapper of rasa api
+# -- parameters --
+# sender: the unique user ID
+# message: the message of the sender
+# -- return --
+# return what rasa api return directly
+# e.g.
+# [{
+#     "recipient_id": "Sender",
+#     "text": "\u963f\u91cc\u5df4\u5df4\uff0d\uff33\uff37(09988) \u7684\u73fe\u50f9\u662f 71.3\u3002"
+# }]
+# -- error messages --
+# 1: cannot connect to server
+
+
+
 
 # for api test
 # localhost:5000/rasa
