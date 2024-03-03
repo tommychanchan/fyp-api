@@ -1,4 +1,8 @@
 {
     "mobileToFlask": "https://7de2-1-65-178-68.ngrok-free.app",
+    "flaskToMongo": {
+        "host": "localhost",
+        "port": 27017
+    },
     "flaskToRasa": "http://localhost:5005"
 }

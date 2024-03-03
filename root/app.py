@@ -96,8 +96,14 @@ def stock_info():
         'aa_cookie=42.2.152.85_54005_1698895454; CookiePolicyCheck=0; _ga=GA1.1.260176329.1698899757; AALTP=1; MasterSymbol={stock_name}; LatestRTQuotedStocks={stock_name}; NewChart=Mini_Color=1; _ga_FL2WFCGS0Y=GS1.1.1698899757.1.1.1698899828.0.0.0; _ga_38RQTHE076=GS1.1.1698899757.1.1.1698899828.0.0.0',
         'aa_cookie=44.236.48.177_30931_1699012196; mLang=TC; CookiePolicyCheck=0; _ga=GA1.1.1282790483.1699016505; __utma=177965731.1282790483.1699016505.1699016505.1699016505.1; __utmc=177965731; __utmz=177965731.1699016505.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmt=1; __utmt_a3=1; AALTP=1; _ga_MW096YVQH9=GS1.1.1699016514.1.0.1699016522.0.0.0; MasterSymbol={stock_name}; LatestRTQuotedStocks={stock_name}; NewChart=Mini_Color=1; AAWS2=; __utmb=177965731.4.10.1699016505; __utma=81143559.1282790483.1699016505.1699016523.1699016523.1; __utmc=81143559; __utmz=81143559.1699016523.1.1.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/; __utmt_a2=1; __utmt_b=1; __utmb=81143559.2.10.1699016523; _ga_FL2WFCGS0Y=GS1.1.1699016504.1.1.1699016522.0.0.0; _ga_38RQTHE076=GS1.1.1699016504.1.1.1699016522.0.0.0',
     ]
-
+    weekend = get_current_datetime().weekday() > 4
+    after1620 = get_current_datetime().time() > datetime.time(16, 20)
     for stock_name, symbol in zip(data, symbols):
+        if weekend or after1620:
+            result = real_time_col.find_one({'symbol': symbol, 'lastUpdate': {'$gte': get_current_date()}})
+            if result:
+                return_list.append(result)
+                continue
         url = f'http://www.aastocks.com/tc/stocks/quote/detail-quote.aspx?symbol={stock_name}'
         headers = {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
@@ -192,7 +198,10 @@ def stock_info():
                 
                 dividend_date = soup.find('div', string='派息日期').parent.find('div', {'class': 'float_r'}).text.strip() or None
 
-                return_list.append({
+                last_update = get_current_datetime()
+
+                to_return = {
+                    'lastUpdate': last_update,
                     'stockType': stock_type,
                     'symbol': symbol,
                     'currentPrice': current_price,
@@ -217,7 +226,12 @@ def stock_info():
                     'turnoverRate': turnover_rate,
                     'exDividendDate': ex_dividend_date,
                     'dividendDate': dividend_date,
-                })
+                }
+
+                if weekend or after1620:
+                    real_time_col.insert_one(to_return)
+
+                return_list.append(to_return)
             except AttributeError as e:
                 print(f'ERROR({symbol}): {e}')
                 if '找不到股票代號' in result:
@@ -245,7 +259,7 @@ def stock_info():
             })
 
 
-    return jsonify(return_list)
+    return parse_json(return_list)
 
 
 
