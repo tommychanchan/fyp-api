@@ -1067,9 +1067,9 @@ def get_future():
             if(last_year_EPS<=two_year_EPS and two_year_EPS>=three_year_EPS):
                 EPS_growth=3 #(average)
             if(last_year_EPS>=two_year_EPS and two_year_EPS<=three_year_EPS):
-                EPS_growth=5 #(overall decreasing) 
+                EPS_growth=4 #(overall decreasing) 
             if(last_year_EPS<two_year_EPS and two_year_EPS<three_year_EPS):
-                EPS_growth=6 #(decreasing)
+                EPS_growth=5 #(decreasing)
         print('EPS overall:')
         print(EPS_growth)
         '''
@@ -1253,8 +1253,9 @@ def get_future():
         # Sort the list in ascending order
         pe_ratio_rank = sorted_pe_ratio_list.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
         print(pe_ratio_rank)     
-        print(len(temp_pe_ratio_list))
+        print(len(sorted_pe_ratio_list))
         print(stock_pe_ratio)
+        total_number_pe_ratio=len(sorted_pe_ratio_list)
         if(stock_pe_ratio>average_pe_ratio):
             pe_ratio_categories=1 # 市盈率超過行業平均值
         if(average_pe_ratio==stock_pe_ratio):
@@ -1274,7 +1275,7 @@ def get_future():
         for pb_ratio in sorted_pb_ratio_list:
             total_pb_ratio=total_pb_ratio+pb_ratio
         average_pb_ratio=total_pb_ratio/len(temp_pb_ratio_list)
-
+        total_number_pb_ratio=len(sorted_pb_ratio_list)
         if(target_number>average_pb_ratio):
             pb_ratio_categories=1 # 市賬率超過行業平均值
         if(target_number==average_pb_ratio):
@@ -1289,6 +1290,7 @@ def get_future():
         ARG_rank = sorted_ARG_list.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
         print(ARG_rank)     
         print(len(sorted_ARG_list))
+        total_number_ARG=len(sorted_ARG_list)
         total_ARG=0
         for ARG in sorted_ARG_list:
             total_ARG=total_ARG+ARG
@@ -1306,18 +1308,33 @@ def get_future():
             'error': 1,
         })
         
-      ### if pe_ratio_rank != None and rate != None:
-               # return_list.append({
-                   # 'date': date,
-                   # 'splitDividend': split_dividend,
-                   # 'rate': rate,
-              #  })
-        #if not anchor:
-            # stock not found
-           # return jsonify({
-               # 'error': 2,
-            #})
-    except requests.exceptions.ConnectionError as e:
+    if pe_ratio_rank != None and rate != None:
+        return_list.append({
+        'EPS_growth': EPS_growth,
+        'annual_revenue_growth_percentage': stock_ARG, #req bug fix(N.A)
+        'pe_ratio_categories': pe_ratio_categories,
+        'average_pe_ratio': average_pe_ratio,
+        'pe_ratio_rank': pe_ratio_rank,
+        'total__number_pe_ratio': total_number_pe_ratio,
+        'pb_ratio_categories': pb_ratio_categories,
+        'average_pb_ratio': average_pb_ratio,
+        'pb_ratio_rank': pb_ratio_rank,
+        'total_number_pb_ratio': total_number_pb_ratio,
+        'revenue_growth': revenue_growth, #req bug fix
+        'annual_revenue_growth': stock_ARG,
+        'annual_revenue_growth_rank': ARG_rank,
+        'total_number_annual_revenue_growth': ARG_categories,
+
+        
+        #N/A==NONE
+        })
+        if not anchor:
+             stock not found
+            return jsonify({
+                'error': 2,
+            })
+        return jsonify(return_list)
+        except requests.exceptions.ConnectionError as e:
         print(f'ERROR({symbol}): {e}')
         return jsonify({
             'error': 1,
@@ -1325,7 +1342,6 @@ def get_future():
 
 
 
-    return jsonify(return_list)
 
 
 
