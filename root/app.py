@@ -1248,42 +1248,55 @@ def get_future():
             print(f'ERROR({stock}): {e}')
  
         # find pe ratio rank and number of class in same categories
-        target_number = float(stock_pe_ratio)
-        sorted_pe_ratio_list = sorted(temp_pe_ratio_list) 
-        # Sort the list in ascending order
-        pe_ratio_rank = sorted_pe_ratio_list.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
-        print(pe_ratio_rank)     
-        print(len(sorted_pe_ratio_list))
-        print(stock_pe_ratio)
-        total_number_pe_ratio=len(sorted_pe_ratio_list)
-        if(stock_pe_ratio>average_pe_ratio):
-            pe_ratio_categories=1 # 市盈率超過行業平均值
-        if(average_pe_ratio==stock_pe_ratio):
-            pe_ratio_categories=2 # 市盈率等於行業平均值
-        if(stock_pe_ratio<average_pe_ratio):
-            pe_ratio_categories=3 # 市盈率低於行業平均值
-        print(pe_ratio_categories)
-        print("----------------")  
+        if(stock_pe_ratio!='N/A'):
+            target_number = float(stock_pe_ratio)
+            sorted_pe_ratio_list = sorted(temp_pe_ratio_list) 
+            # Sort the list in ascending order
+            pe_ratio_rank = sorted_pe_ratio_list.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
+            print(pe_ratio_rank)     
+            print(len(sorted_pe_ratio_list))
+            print(stock_pe_ratio)
+            total_number_pe_ratio=len(sorted_pe_ratio_list)
+            if(stock_pe_ratio>average_pe_ratio):
+                pe_ratio_categories=1 # 市盈率超過行業平均值
+            if(average_pe_ratio==stock_pe_ratio):
+                pe_ratio_categories=2 # 市盈率等於行業平均值
+            if(stock_pe_ratio<average_pe_ratio):
+                pe_ratio_categories=3 # 市盈率低於行業平均值
+            print(pe_ratio_categories)
+            print("----------------")  
+        if(stock_pe_ratio=='N/A'):
+            pe_ratio_categories=None
+            average_pe_ratio=None
+            pe_ratio_rank=None
+            total_number_pe_ratio=None
 
         # find pb ratio rank and number of class in same categories
-        target_number = float(stock_pb_ratio)
-        sorted_pb_ratio_list = sorted(temp_pb_ratio_list)  # Sort the list in ascending order
-        pb_ratio_rank = sorted_pb_ratio_list.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
-        print(pb_ratio_rank)     
-        print(len(temp_pb_ratio_list))
-        total_pb_ratio=0
-        for pb_ratio in sorted_pb_ratio_list:
-            total_pb_ratio=total_pb_ratio+pb_ratio
-        average_pb_ratio=total_pb_ratio/len(temp_pb_ratio_list)
-        total_number_pb_ratio=len(sorted_pb_ratio_list)
-        if(target_number>average_pb_ratio):
-            pb_ratio_categories=1 # 市賬率超過行業平均值
-        if(target_number==average_pb_ratio):
-            pb_ratio_categories=2 # 市賬率等於行業平均值
-        if(target_number<average_pb_ratio):
-            pb_ratio_categories=3 # 市賬率低於行業平均值
-        print(pb_ratio_categories)
-        print("----------------")
+        if(stock_pb_ratio!='N/A'):
+            target_number = float(stock_pb_ratio)
+            sorted_pb_ratio_list = sorted(temp_pb_ratio_list)  # Sort the list in ascending order
+            pb_ratio_rank = sorted_pb_ratio_list.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
+            print(pb_ratio_rank)     
+            print(len(temp_pb_ratio_list))
+            total_pb_ratio=0
+            for pb_ratio in sorted_pb_ratio_list:
+                total_pb_ratio=total_pb_ratio+pb_ratio
+            average_pb_ratio=total_pb_ratio/len(temp_pb_ratio_list)
+            total_number_pb_ratio=len(sorted_pb_ratio_list)
+            if(target_number>average_pb_ratio):
+                pb_ratio_categories=1 # 市賬率超過行業平均值
+            if(target_number==average_pb_ratio):
+                pb_ratio_categories=2 # 市賬率等於行業平均值
+            if(target_number<average_pb_ratio):
+                pb_ratio_categories=3 # 市賬率低於行業平均值
+            print(pb_ratio_categories)
+            print("----------------")
+        if(stock_pb_ratio=='N/A'):
+            pb_ratio_categories=None
+            average_pb_ratio=None
+            pb_ratio_rank=None
+            total_number_pb_ratio=None
+            
         # find annual revenue growth (年度收入增長) of class in same categories
         target_number = float(stock_ARG.strip().strip("%"))/100 
         sorted_ARG_list = sorted(temp_ARG_list,reverse=True) 
@@ -1308,7 +1321,7 @@ def get_future():
             'error': 1,
         })
         
-    if pe_ratio_rank != None and rate != None:
+        return_list=[]
         return_list.append({
         'EPS_growth': EPS_growth,
         'annual_revenue_growth_percentage': stock_ARG, #req bug fix(N.A)
