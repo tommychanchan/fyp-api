@@ -1015,18 +1015,30 @@ def get_future():
         ).text
     
         #finding the revenue of the stock
+        '''soup = BeautifulSoup(result, features='html.parser')
+        anchor =soup.select('td.cfvalue.txt_r.cls.bold')
+        last_year_revenue = anchor[2].text.strip()
+        if(anchor[2].previous_sibling.previous_sibling.text.strip()=="盈利(百萬)"or "-"):'''
+        
+        #finding the revenue of the stock
         soup = BeautifulSoup(result, features='html.parser')
         anchor =soup.select('td.cfvalue.txt_r.cls.bold')
-        last_year_revenue = anchor[1].text.strip()
-        if(anchor[1].previous_sibling.previous_sibling.text.strip()=="盈利(百萬)"or "-"):
+        if(anchor[0].text.strip()=="N/A" and "-"):
+            last_year_revenue = "N/A"
             two_year_revenue = "N/A"
             three_year_revenue = "N/A"
         else:
-            two_year_revenue =anchor[1].previous_sibling.previous_sibling.text.strip()
-            if(anchor[1].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip()=="盈利(百萬)"or "-"):
+            last_year_revenue = anchor[0].text.strip()
+            if(anchor[0].previous_sibling.previous_sibling.text.strip()=="盈利(百萬)" and "-"):
+                print(bool(anchor[0].previous_sibling.previous_sibling.text.strip()=="盈利(百萬)"or "-"))
+                two_year_revenue = "N/A"
                 three_year_revenue = "N/A"
             else:
-                three_year_revenue = anchor[1].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip()
+                two_year_revenue =anchor[0].previous_sibling.previous_sibling.text.strip()
+                if(anchor[0].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip()=="盈利(百萬)" and "-"):
+                    three_year_revenue = "N/A"
+                else:
+                    three_year_revenue = anchor[0].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip()
         if(last_year_revenue[0]=='-'):
             last_year_revenue=last_year_revenue[1:]
             last_year_revenue=float(last_year_revenue)*(-1)
@@ -1321,37 +1333,30 @@ def get_future():
             'error': 1,
         })
         
-        return_list=[]
-        return_list.append({
-        'EPS_growth': EPS_growth,
-        'annual_revenue_growth_percentage': stock_ARG, #req bug fix(N.A)
-        'pe_ratio_categories': pe_ratio_categories,
-        'average_pe_ratio': average_pe_ratio,
-        'pe_ratio_rank': pe_ratio_rank,
-        'total__number_pe_ratio': total_number_pe_ratio,
-        'pb_ratio_categories': pb_ratio_categories,
-        'average_pb_ratio': average_pb_ratio,
-        'pb_ratio_rank': pb_ratio_rank,
-        'total_number_pb_ratio': total_number_pb_ratio,
-        'revenue_growth': revenue_growth, #req bug fix
-        'annual_revenue_growth': stock_ARG,
-        'annual_revenue_growth_rank': ARG_rank,
-        'total_number_annual_revenue_growth': ARG_categories,
+    return_list=[]
+    return_list.append({
+    'EPS_growth': EPS_growth,
+    'annual_revenue_growth_percentage': stock_ARG, #req bug fix(N.A)
+    'pe_ratio_categories': pe_ratio_categories,
+    'average_pe_ratio': average_pe_ratio,
+    'pe_ratio_rank': pe_ratio_rank,
+    'total__number_pe_ratio': total_number_pe_ratio,
+    'pb_ratio_categories': pb_ratio_categories,
+    'average_pb_ratio': average_pb_ratio,
+    'pb_ratio_rank': pb_ratio_rank,
+    'total_number_pb_ratio': total_number_pb_ratio,
+    #'revenue_growth': revenue_growth, #req bug fix
+    'annual_revenue_growth': stock_ARG,
+    'annual_revenue_growth_rank': ARG_rank,
+    'total_number_annual_revenue_growth': ARG_categories,
 
         
         #N/A==NONE
-        })
-        if not anchor:
-             stock not found
-            return jsonify({
-                'error': 2,
-            })
-        return jsonify(return_list)
-        except requests.exceptions.ConnectionError as e:
-        print(f'ERROR({symbol}): {e}')
-        return jsonify({
-            'error': 1,
-        })
+    })
+    return jsonify(return_list)
+
+    
+        
 
 
 
