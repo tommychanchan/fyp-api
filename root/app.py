@@ -150,7 +150,7 @@ def stock_info():
                 earnings_per_share = temp and float(temp.parent.parent.find('div', {'class': 'float_r'}).text.strip())
                 
                 temp = soup.find('div', {'id': 'tbPERatio'})
-                price_to_earnings_ratio, price_to_earnings_ratio_ttm = (float_or_none(x.strip()) for x in temp.find('div', {'class': 'float_r'}).text.split('/')) if temp else (None, None)
+                price_to_earnings_ratio, price_to_earnings_ratio_ttm = (float_or_none(x.strip()) if x.strip() != '無盈利' else '無盈利' for x in temp.find('div', {'class': 'float_r'}).text.split('/')) if temp else (None, None)
 
                 temp = soup.find('div', {'id': 'tbPBRatio'})
                 price_to_book_ratio, net_asst_value_per_share = (float(x.strip()) for x in temp.find('div', {'class': 'float_r'}).text.split('/')) if temp else (None, None)
