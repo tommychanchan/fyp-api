@@ -922,7 +922,7 @@ def stock_split():
 
 # for api test
 # localhost:5000/get_future
-# {"stock": "09988.hk"}      
+# {"stock": "9988.hk"}      
 @app.route('/get_future', methods=['POST'])
 def get_future():
     json_data = request.json
@@ -1019,7 +1019,7 @@ def get_future():
         anchor =soup.select('td.cfvalue.txt_r.cls.bold')
         last_year_revenue_percent = float(anchor[1].text.strip())
         print(last_year_revenue_percent)
-
+        
         
         
         #finding the revenue of the stock
@@ -1041,7 +1041,7 @@ def get_future():
                     three_year_revenue = "N/A"
                 else:
                     three_year_revenue = anchor[0].previous_sibling.previous_sibling.previous_sibling.previous_sibling.text.strip()
-        if(last_year_revenue[0]=='-'):
+        '''if(last_year_revenue[0]=='-'):
             last_year_revenue=last_year_revenue[1:]
             last_year_revenue=float(last_year_revenue)*(-1)
         if(last_year_revenue[0]=='-'):
@@ -1049,7 +1049,7 @@ def get_future():
             two_year_revenue=float(two_year_revenue)*(-1)
         if(three_year_revenue[0]=='-'):
             three_year_revenue=three_year_revenue[1:]
-            three_year_revenue=float(three_year_revenue)*(-1)
+            three_year_revenue=float(three_year_revenue)*(-1)'''
         print(last_year_revenue)
         print(two_year_revenue)
         print(three_year_revenue)
@@ -1066,6 +1066,8 @@ def get_future():
                 revenue_growth=4 #(overall decreasing) 
             if(last_year_revenue<two_year_revenue and two_year_revenue<three_year_revenue):
                 revenue_growth=5 #(decreasing)
+        if(last_year_revenue =="N/A" or two_year_revenue =="N/A" or three_year_revenue =="N/A" ):
+            revenue_growth=None
         print('revenue overall:')
         print(revenue_growth)
         print("----------------")
@@ -1099,6 +1101,8 @@ def get_future():
                 EPS_growth=4 #(overall decreasing) 
             if(last_year_EPS<two_year_EPS and two_year_EPS<three_year_EPS):
                 EPS_growth=5 #(decreasing)
+        if(last_year_EPS =="N/A" or two_year_EPS =="N/A" or three_year_EPS =="N/A" ):
+            EPS_growth=None
         print('EPS overall:')
         print(EPS_growth)
         '''
@@ -1144,7 +1148,9 @@ def get_future():
         result = requests.get(
             url, timeout=40, headers=headers, verify=False
         ).text
-
+        '''soup = BeautifulSoup(result, features='html.parser')
+        anchor = soup.find('table',{'id': 'tblTS2'})
+        categories_name:'''
         #finding annual revenue growth (年度收入增長)
         annual_revenue_growth_list=[]
         for data in ARG_list:
@@ -1168,7 +1174,7 @@ def get_future():
             if  ARG=="N/A":
                 pass
             else:
-                temp_ARG_list.append(float(ARG.strip().strip("%"))/100)
+                temp_ARG_list.append(float(ARG.replace(',', '').strip().strip("%"))/100)
         if not anchor:
             # stock not found
             return jsonify({
@@ -1244,7 +1250,7 @@ def get_future():
 
         url = f"http://localhost:{PORT}/stock_info"
         headers = {}
-        payload = {'stocks': ['9988.hk']}
+        payload = {'stocks': [symbol]}
         try:
             result = requests.post(
                 url, timeout=40, headers=headers, json=payload, verify=False
@@ -1313,37 +1319,42 @@ def get_future():
             total_number_pb_ratio=None
             
         # find annual revenue growth (年度收入增長) of class in same categories
-        target_number = float(stock_ARG.strip().strip("%"))/100 
-        sorted_ARG_list = sorted(temp_ARG_list,reverse=True) 
-        ARG_rank = sorted_ARG_list.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
-        print(ARG_rank)     
-        print(len(sorted_ARG_list))
-        total_number_ARG=len(sorted_ARG_list)
-        total_ARG=0
-        for ARG in sorted_ARG_list:
-            total_ARG=total_ARG+ARG
-        average_ARG=total_ARG/len(sorted_ARG_list)
-        if(target_number>average_ARG):
-            ARG_categories=1 # 年度收入增長超過行業平均值
-        if(target_number==stock_pb_ratio):
-            ARG_categories=2 # 年度收入增長等於行業平均值
-        if(target_number<average_pb_ratio):
-            ARG_categories=3 # 年度收入增長低於行業平均值
-        print(ARG_categories)
+        if(stock_ARG!='N/A'):
+            target_number = float(stock_ARG.strip().strip("%"))/100 
+            sorted_ARG_list = sorted(temp_ARG_list,reverse=True) 
+            ARG_rank = sorted_ARG_list.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
+            print(ARG_rank)     
+            print(len(sorted_ARG_list))
+            total_number_ARG=len(sorted_ARG_list)
+            total_ARG=0
+            for ARG in sorted_ARG_list:
+                total_ARG=total_ARG+ARG
+            average_ARG=total_ARG/len(sorted_ARG_list)
+            if(target_number>average_ARG):
+                ARG_categories=1 # 年度收入增長超過行業平均值
+            if(target_number==stock_pb_ratio):
+                ARG_categories=2 # 年度收入增長等於行業平均值
+            if(target_number<average_pb_ratio):
+                ARG_categories=3 # 年度收入增長低於行業平均值
+            print(ARG_categories)
+        else:
+            ARG_rank=None
+            ARG_categories=None
     except requests.exceptions.ConnectionError as e:
-            print(f'ERROR({symbol}): {e}')
-            return jsonify({
-                'error': 1,
-            })
+        print(f'ERROR({symbol}): {e}')
+        return jsonify({
+            'error': 1,
+        })
     
     return_list=[]
     return_list.append({
+    #'categories_name': categories_name,
     'EPS_growth': EPS_growth,
     'last_year_revenue_percent': last_year_revenue_percent,
     'pe_ratio_categories': pe_ratio_categories,
     'average_pe_ratio': average_pe_ratio,
     'pe_ratio_rank': pe_ratio_rank,
-    'total__number_pe_ratio': total_number_pe_ratio,
+    'total_number_pe_ratio': total_number_pe_ratio,
     'pb_ratio_categories': pb_ratio_categories,
     'average_pb_ratio': average_pb_ratio,
     'pb_ratio_rank': pb_ratio_rank,
