@@ -1053,6 +1053,21 @@ def get_future():
         print(last_year_revenue)
         print(two_year_revenue)
         print(three_year_revenue)
+        if(last_year_revenue !="N/A" and two_year_revenue !="N/A" and three_year_revenue !="N/A" ):
+            if(last_year_revenue>two_year_revenue and two_year_revenue>three_year_revenue):
+                revenue_growth=1 #(increasing)
+            if(last_year_revenue<=two_year_revenue and two_year_revenue>=three_year_revenue):
+                revenue_growth=2 #(overall increasing)
+            if(last_year_revenue>=two_year_revenue and two_year_revenue<=three_year_revenue):
+                revenue_growth=2 #(overall increasing)
+            if(last_year_revenue<=two_year_revenue and two_year_revenue>=three_year_revenue):
+                revenue_growth=3 #(average)
+            if(last_year_revenue>=two_year_revenue and two_year_revenue<=three_year_revenue):
+                revenue_growth=4 #(overall decreasing) 
+            if(last_year_revenue<two_year_revenue and two_year_revenue<three_year_revenue):
+                revenue_growth=5 #(decreasing)
+        print('revenue overall:')
+        print(revenue_growth)
         print("----------------")
 
         #finding EPS of the stock
@@ -1347,11 +1362,10 @@ def get_future():
     'average_pb_ratio': average_pb_ratio,
     'pb_ratio_rank': pb_ratio_rank,
     'total_number_pb_ratio': total_number_pb_ratio,
-    'annual_revenue_growth': stock_ARG,
+    'annual_revenue_growth': revenue_growth, 
     'annual_revenue_growth_rank': ARG_rank,
     'total_number_annual_revenue_growth': ARG_categories
-    #N/A==NONE
-       
+    #N/A==NONE   
     })
     return jsonify(return_list)
 
