@@ -1014,11 +1014,13 @@ def get_future():
             url, timeout=40, headers=headers, verify=False
         ).text
     
-        #finding the revenue of the stock
-        '''soup = BeautifulSoup(result, features='html.parser')
+        #finding the %revenue of the stock last year
+        soup = BeautifulSoup(result, features='html.parser')
         anchor =soup.select('td.cfvalue.txt_r.cls.bold')
-        last_year_revenue = anchor[2].text.strip()
-        if(anchor[2].previous_sibling.previous_sibling.text.strip()=="盈利(百萬)"or "-"):'''
+        last_year_revenue_percent = float(anchor[1].text.strip())
+        print(last_year_revenue_percent)
+
+        
         
         #finding the revenue of the stock
         soup = BeautifulSoup(result, features='html.parser')
@@ -1030,7 +1032,7 @@ def get_future():
         else:
             last_year_revenue = anchor[0].text.strip()
             if(anchor[0].previous_sibling.previous_sibling.text.strip()=="盈利(百萬)" and "-"):
-                print(bool(anchor[0].previous_sibling.previous_sibling.text.strip()=="盈利(百萬)"or "-"))
+        
                 two_year_revenue = "N/A"
                 three_year_revenue = "N/A"
             else:
@@ -1051,6 +1053,21 @@ def get_future():
         print(last_year_revenue)
         print(two_year_revenue)
         print(three_year_revenue)
+        if(last_year_revenue !="N/A" and two_year_revenue !="N/A" and three_year_revenue !="N/A" ):
+            if(last_year_revenue>two_year_revenue and two_year_revenue>three_year_revenue):
+                revenue_growth=1 #(increasing)
+            if(last_year_revenue<=two_year_revenue and two_year_revenue>=three_year_revenue):
+                revenue_growth=2 #(overall increasing)
+            if(last_year_revenue>=two_year_revenue and two_year_revenue<=three_year_revenue):
+                revenue_growth=2 #(overall increasing)
+            if(last_year_revenue<=two_year_revenue and two_year_revenue>=three_year_revenue):
+                revenue_growth=3 #(average)
+            if(last_year_revenue>=two_year_revenue and two_year_revenue<=three_year_revenue):
+                revenue_growth=4 #(overall decreasing) 
+            if(last_year_revenue<two_year_revenue and two_year_revenue<three_year_revenue):
+                revenue_growth=5 #(decreasing)
+        print('revenue overall:')
+        print(revenue_growth)
         print("----------------")
 
         #finding EPS of the stock
@@ -1328,15 +1345,15 @@ def get_future():
             ARG_categories=3 # 年度收入增長低於行業平均值
         print(ARG_categories)
     except requests.exceptions.ConnectionError as e:
-        print(f'ERROR({symbol}): {e}')
-        return jsonify({
-            'error': 1,
-        })
-        
+            print(f'ERROR({symbol}): {e}')
+            return jsonify({
+                'error': 1,
+            })
+    
     return_list=[]
     return_list.append({
     'EPS_growth': EPS_growth,
-    'annual_revenue_growth_percentage': stock_ARG, #req bug fix(N.A)
+    'last_year_revenue_percent': last_year_revenue_percent,
     'pe_ratio_categories': pe_ratio_categories,
     'average_pe_ratio': average_pe_ratio,
     'pe_ratio_rank': pe_ratio_rank,
@@ -1345,13 +1362,10 @@ def get_future():
     'average_pb_ratio': average_pb_ratio,
     'pb_ratio_rank': pb_ratio_rank,
     'total_number_pb_ratio': total_number_pb_ratio,
-    #'revenue_growth': revenue_growth, #req bug fix
-    'annual_revenue_growth': stock_ARG,
+    'annual_revenue_growth': revenue_growth, 
     'annual_revenue_growth_rank': ARG_rank,
-    'total_number_annual_revenue_growth': ARG_categories,
-
-        
-        #N/A==NONE
+    'total_number_annual_revenue_growth': ARG_categories
+    #N/A==NONE   
     })
     return jsonify(return_list)
 
