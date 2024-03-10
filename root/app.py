@@ -1145,20 +1145,6 @@ def get_future():
             url, timeout=40, headers=headers, verify=False
         ).text
 
-        #find pb_ratio of a stock
-        soup = BeautifulSoup(result, features='html.parser')
-        anchor = soup.find('div', text="市盈率")
-        if (anchor.find_next_sibling().text.strip()=='N/A'):
-            PE_ratio="N/A"        
-        else:
-            PE_ratio=float(anchor.find_next_sibling().text.strip())
-        print(PE_ratio)
-        if not anchor:
-            # stock not found
-            return jsonify({
-                'error': 2,
-            })
-
         #finding annual revenue growth (年度收入增長)
         annual_revenue_growth_list=[]
         for data in ARG_list:
@@ -1269,13 +1255,13 @@ def get_future():
                 # cannot connect to aastocks server
                 print('ERROR: Cannot connect to AASTOCKS server.')
             
-            '''print('市盈率:')
+            print('市盈率:')
             print(result_json.get('priceToEarningsRatio'))
             print('市賬率:')
-            print(result_json.get('priceToBookRatio'))'''
+            print(result_json.get('priceToBookRatio'))
         except requests.exceptions.ConnectionError as e:
             print(f'ERROR({stock}): {e}')
- 
+
         # find pe ratio rank and number of class in same categories
         if(stock_pe_ratio!='N/A'):
             target_number = float(stock_pe_ratio)
