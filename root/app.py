@@ -276,7 +276,7 @@ def stock_info():
 
 # for api test
 # localhost:5000/qa
-# {"qs": ["按金", "按盤價"]}
+# {"qs": ["按金", "按盤價"]}
 @app.route('/qa', methods=['POST'])
 def qa():
     json_data = request.json
@@ -1355,8 +1355,8 @@ def get_future():
     })
     return jsonify(return_list)
 
-    
-        
+
+
 
 
 
@@ -1376,9 +1376,6 @@ def get_future():
 # }]
 # -- error messages --
 # 1: cannot connect to server
-
-
-
 
 # for api test
 # localhost:5000/rasa
