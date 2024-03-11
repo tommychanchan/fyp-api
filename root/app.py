@@ -1403,21 +1403,20 @@ def get_future():
     
     return_list=[]
     return_list.append({
-    'categories_name': categories_name,
-    'EPS_growth': EPS_growth,
-    'last_year_revenue_percent': last_year_revenue_percent,
-    'pe_ratio_categories': pe_ratio_categories,
-    'average_pe_ratio': average_pe_ratio,
-    'pe_ratio_rank': pe_ratio_rank,
-    'total_number_pe_ratio': total_number_pe_ratio,
-    'pb_ratio_categories': pb_ratio_categories,
-    'average_pb_ratio': average_pb_ratio,
-    'pb_ratio_rank': pb_ratio_rank,
-    'total_number_pb_ratio': total_number_pb_ratio,
-    'annual_revenue_growth': revenue_growth, 
-    'annual_revenue_growth_rank': ARG_rank,
-    'total_number_annual_revenue_growth': total_number_ARG
-    #N/A==NONE   
+    'categories_name': categories_name, #return a string, categories name
+    'EPS_growth': EPS_growth, #return a integer(1-5) or'N/A', 1 increasing ,2 overall increasing,3 average,4 overall decreasing,5 decreasing, will be 'N/A' if one of the revenue in la
+    'revenue_growth_percentage': last_year_revenue_percent, #return a float, ARG percentage  without % sign
+    'pe_ratio_categories': pe_ratio_categories, #return a integer(1-3), 'None' or '無盈利' 1 市盈率超過行業平均值, 2 市盈率等於行業平均值 ,3 市盈率低於行業平均值 , if pe ratio of that stock is "N/A" or '無盈利', this will change to itcorrespondingly
+    'average_pe_ratio': average_pe_ratio, # return a float ,'None', average pe ratio of the category, if pe_ratio_categories is "None" or '無盈利', this will be 'None' too
+    'pe_ratio_rank': pe_ratio_rank, # return a integer or 'None', rank of the pe ratio in the category ,if pe_ratio_categories is "None" or '無盈利', this will be 'None' too
+    'total_number_pe_ratio': total_number_pe_ratio, # return a integer or 'None', total number of pe ratio in the category,if pe_ratio_categories is "None" or '無盈利', this will be 'None' too
+    'pb_ratio_categories': pb_ratio_categories, # return a float, average pb ratio of the category
+    'average_pb_ratio': average_pb_ratio, #return a integer(1-3), 'None' or '無盈利' 1 市賬率超過行業平均值, 2 市賬率等於行業平均值 ,3 市賬率低於行業平均值 , if pb ratio of that stock is "N/A" or '無盈利', this will change to itcorrespondingly
+    'pb_ratio_rank': pb_ratio_rank, # return a integer or 'None', rank of the pb ratio in the category ,if pb_ratio_categories is "None" or '無盈利', this will be 'None' too
+    'total_number_pb_ratio': total_number_pb_ratio, # return a integer or 'None', total number of pb ratio in the category,if pb_ratio_categories is "None" or '無盈利', this will be 'None' too
+    'revenue_growth': revenue_growth, #return a integer(1-5) or None, 1 increasing ,2 overall increasing,3 average,4 overall decreasing,5 decreasing, will be 'N/A' if one of the revenue in last three years is 'N/A'
+    'annual_revenue_growth_rank': ARG_rank, # return a integer or 'None', rank of the ARG in the category , if ARG is 'N/A', this become 'None'
+    'total_number_annual_revenue_growth': total_number_ARG # return a integer or 'None', rank of the ARG in the category , if ARG is 'N/A', this become 'None'
     })
     return jsonify(return_list)
 
