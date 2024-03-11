@@ -955,9 +955,6 @@ def get_future():
             stock_id = temp_soup.find('a').text[:-3]
             pe_ratio = datum['d6']  # 市盈率: can be "N/A"/"無盈利"/"33.06"...
             pb_ratio = datum['d7']  # 市賬率: can be "N/A"/"3.43"...
-            if f'{stock_id}' == f'{stock_name}':
-                stock_pe_ratio=pe_ratio
-                stock_pb_ratio=pb_ratio
             pe_pb_list.append(f'{stock_id}: {pe_ratio} & {pb_ratio}')
     
     except requests.exceptions.ConnectionError as e:
@@ -983,6 +980,7 @@ def get_future():
         temp_list = json.loads((result[result.index('tsData')+8:result.index('];', result.index('tsData'))+1]).strip().replace('d0', '"d0"').replace('d1', '"d1"').replace('d2', '"d2"').replace('d3', '"d3"').replace('d4', '"d4"').replace('d5', '"d5"').replace('d6', '"d6"').replace('d7', '"d7"').replace('d8', '"d8"').replace('d9', '"d9"').replace('"d1"0', '"d10"'))
         temp_soup = None
         ARG_list=[]
+        stock_ARG=None
         for datum in temp_list:
             temp_soup = BeautifulSoup(datum['d0'], features='html.parser')
             stock_id = temp_soup.find('a').text[:-3]
@@ -1014,11 +1012,6 @@ def get_future():
             url, timeout=40, headers=headers, verify=False
         ).text
     
-        #finding the %revenue of the stock last year
-        soup = BeautifulSoup(result, features='html.parser')
-        anchor =soup.select('td.cfvalue.txt_r.cls.bold')
-        last_year_revenue_percent = float(anchor[1].text.strip())
-        print(last_year_revenue_percent)
         
         
         
@@ -1054,15 +1047,18 @@ def get_future():
         print(two_year_revenue)
         print(three_year_revenue)
         if(last_year_revenue !="N/A" and two_year_revenue !="N/A" and three_year_revenue !="N/A" ):
+            last_year_revenue=float(last_year_revenue)
+            two_year_revenue=float(two_year_revenue)
+            three_year_revenue=float(three_year_revenue)
             if(last_year_revenue>two_year_revenue and two_year_revenue>three_year_revenue):
                 revenue_growth=1 #(increasing)
-            if(last_year_revenue<=two_year_revenue and two_year_revenue>=three_year_revenue):
+            if(last_year_revenue<=two_year_revenue and two_year_revenue>=three_year_revenue and last_year_revenue>=three_year_revenue):
                 revenue_growth=2 #(overall increasing)
-            if(last_year_revenue>=two_year_revenue and two_year_revenue<=three_year_revenue):
+            if(last_year_revenue>=two_year_revenue and two_year_revenue<=three_year_revenue and last_year_revenue>=three_year_revenue):
                 revenue_growth=2 #(overall increasing)
-            if(last_year_revenue<=two_year_revenue and two_year_revenue>=three_year_revenue):
+            if(last_year_revenue<=two_year_revenue and two_year_revenue>=three_year_revenue and last_year_revenue<=three_year_revenue):
                 revenue_growth=3 #(average)
-            if(last_year_revenue>=two_year_revenue and two_year_revenue<=three_year_revenue):
+            if(last_year_revenue>=two_year_revenue and two_year_revenue<=three_year_revenue and three_year_revenue>=last_year_revenue):
                 revenue_growth=4 #(overall decreasing) 
             if(last_year_revenue<two_year_revenue and two_year_revenue<three_year_revenue):
                 revenue_growth=5 #(decreasing)
@@ -1070,6 +1066,25 @@ def get_future():
             revenue_growth=None
         print('revenue overall:')
         print(revenue_growth)
+        '''
+        1 2 3 --> 1 increasing
+        1 3 2 --> 2 overall increasing
+        2 1 3 --> 2 overall increasing
+        2 3 1 --> 3 average 
+        3 1 2 --> 4 overall decreasing 
+        3 2 1 --> 5 decreasing
+        '''
+
+        #finding the %revenue of the stock last year
+        soup = BeautifulSoup(result, features='html.parser')
+        anchor =soup.select('td.cfvalue.txt_r.cls.bold')
+        if(anchor[1].text.strip()!="-"):
+            last_year_revenue_percent = float(anchor[1].text.strip())
+        else:
+            last_year_revenue_percent=(float(last_year_revenue)-float(two_year_revenue))/float(two_year_revenue)
+            last_year_revenue_percent=last_year_revenue_percent*100
+            last_year_revenue_percent=round(last_year_revenue_percent, 2)
+        print(last_year_revenue_percent)
         print("----------------")
 
         #finding EPS of the stock
@@ -1088,16 +1103,19 @@ def get_future():
         print(two_year_EPS)
         print(three_year_EPS)
 
-        if(last_year_EPS !="N/A" and two_year_EPS !="N/A" and three_year_EPS !="N/A" ):
+        if(last_year_EPS !="N/A" and two_year_EPS !="N/A" and three_year_EPS !="N/A"):
+            last_year_EPS=float(last_year_EPS)
+            two_year_EPS=float(two_year_EPS)
+            three_year_EPS=float(three_year_EPS)
             if(last_year_EPS>two_year_EPS and two_year_EPS>three_year_EPS):
                 EPS_growth=1 #(increasing)
-            if(last_year_EPS<=two_year_EPS and two_year_EPS>=three_year_EPS):
+            if(last_year_EPS<=two_year_EPS and two_year_EPS>=three_year_EPS and last_year_EPS>=three_year_EPS):
                 EPS_growth=2 #(overall increasing)
-            if(last_year_EPS>=two_year_EPS and two_year_EPS<=three_year_EPS):
+            if(last_year_EPS>=two_year_EPS and two_year_EPS<=three_year_EPS and last_year_EPS>=three_year_EPS):
                 EPS_growth=2 #(overall increasing)
-            if(last_year_EPS<=two_year_EPS and two_year_EPS>=three_year_EPS):
+            if(last_year_EPS<=two_year_EPS and two_year_EPS>=three_year_EPS and last_year_EPS<= three_year_EPS):
                 EPS_growth=3 #(average)
-            if(last_year_EPS>=two_year_EPS and two_year_EPS<=three_year_EPS):
+            if(last_year_EPS>=two_year_EPS and two_year_EPS<=three_year_EPS and three_year_EPS>=last_year_EPS):
                 EPS_growth=4 #(overall decreasing) 
             if(last_year_EPS<two_year_EPS and two_year_EPS<three_year_EPS):
                 EPS_growth=5 #(decreasing)
@@ -1148,9 +1166,11 @@ def get_future():
         result = requests.get(
             url, timeout=40, headers=headers, verify=False
         ).text
-        '''soup = BeautifulSoup(result, features='html.parser')
-        anchor = soup.find('table',{'id': 'tblTS2'})
-        categories_name:'''
+
+        #finding category name
+        soup = BeautifulSoup(result, features='html.parser')
+        anchor = soup.find('div',{'class': 'tabPanel_Title'})
+        categories_name=anchor.text.strip()
         #finding annual revenue growth (年度收入增長)
         annual_revenue_growth_list=[]
         for data in ARG_list:
@@ -1175,6 +1195,15 @@ def get_future():
                 pass
             else:
                 temp_ARG_list.append(float(ARG.replace(',', '').strip().strip("%"))/100)
+        
+        #check if ARG is None and assign the correct ARG to it
+        if(stock_ARG==None):
+            soup = BeautifulSoup(result, features='html.parser')
+            anchor = soup.find('a',{'title': f'{stock_name}'+".HK"})
+            print(anchor)
+            stock_ARG=anchor.parent.parent.parent.find_next_sibling().find_next_sibling().find_next_sibling().text.strip()
+            
+        print(stock_ARG)
         if not anchor:
             # stock not found
             return jsonify({
@@ -1260,16 +1289,33 @@ def get_future():
             if result_json.get('error') == 1:
                 # cannot connect to aastocks server
                 print('ERROR: Cannot connect to AASTOCKS server.')
-            
+            if(result_json.get('priceToEarningsRatio')=="N/A"or result_json.get('priceToEarningsRatio')=="無盈利"):
+                stock_pe_ratio=result_json.get('priceToEarningsRatio')
+            else:
+                stock_pe_ratio=round(float(result_json.get('priceToEarningsRatio')),2)
+            if(result_json.get('priceToBookRatio')=="N/A"or result_json.get('priceToBookRatio')=="無盈利"):
+                stock_pb_ratio=result_json.get('priceToBookRatio')
+            else:
+                stock_pb_ratio=round(float(result_json.get('priceToBookRatio')),2)
             print('市盈率:')
-            print(result_json.get('priceToEarningsRatio'))
+            print(stock_pe_ratio)
             print('市賬率:')
-            print(result_json.get('priceToBookRatio'))
+            print(stock_pb_ratio)
         except requests.exceptions.ConnectionError as e:
             print(f'ERROR({stock}): {e}')
 
         # find pe ratio rank and number of class in same categories
-        if(stock_pe_ratio!='N/A'):
+        if(stock_pe_ratio=='N/A'):
+            pe_ratio_categories=None
+            average_pe_ratio=None
+            pe_ratio_rank=None
+            total_number_pe_ratio=None
+        elif(stock_pe_ratio=='無盈利'):
+            pe_ratio_categories='無盈利'
+            average_pe_ratio=None
+            pe_ratio_rank=None
+            total_number_pe_ratio=None
+        else:
             target_number = float(stock_pe_ratio)
             sorted_pe_ratio_list = sorted(temp_pe_ratio_list) 
             # Sort the list in ascending order
@@ -1278,22 +1324,31 @@ def get_future():
             print(len(sorted_pe_ratio_list))
             print(stock_pe_ratio)
             total_number_pe_ratio=len(sorted_pe_ratio_list)
-            if(stock_pe_ratio>average_pe_ratio):
+            average_pe_ratio=float(average_pe_ratio)
+            average_pe_ratio=round(average_pe_ratio,2)
+            if(target_number>average_pe_ratio):
                 pe_ratio_categories=1 # 市盈率超過行業平均值
-            if(average_pe_ratio==stock_pe_ratio):
+            if(average_pe_ratio==target_number):
                 pe_ratio_categories=2 # 市盈率等於行業平均值
-            if(stock_pe_ratio<average_pe_ratio):
+            if(target_number<average_pe_ratio):
                 pe_ratio_categories=3 # 市盈率低於行業平均值
             print(pe_ratio_categories)
             print("----------------")  
-        if(stock_pe_ratio=='N/A'):
-            pe_ratio_categories=None
-            average_pe_ratio=None
-            pe_ratio_rank=None
-            total_number_pe_ratio=None
+
 
         # find pb ratio rank and number of class in same categories
-        if(stock_pb_ratio!='N/A'):
+            
+        if(stock_pb_ratio=='N/A'):
+            pb_ratio_categories=None
+            average_pb_ratio=None
+            pb_ratio_rank=None
+            total_number_pb_ratio=None
+        elif(stock_pb_ratio=='無盈利'):
+            pb_ratio_categories='無盈利'
+            average_pb_ratio=None
+            pb_ratio_rank=None
+            total_number_pb_ratio=None
+        else:
             target_number = float(stock_pb_ratio)
             sorted_pb_ratio_list = sorted(temp_pb_ratio_list)  # Sort the list in ascending order
             pb_ratio_rank = sorted_pb_ratio_list.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
@@ -1302,7 +1357,8 @@ def get_future():
             total_pb_ratio=0
             for pb_ratio in sorted_pb_ratio_list:
                 total_pb_ratio=total_pb_ratio+pb_ratio
-            average_pb_ratio=total_pb_ratio/len(temp_pb_ratio_list)
+            average_pb_ratio=float(total_pb_ratio/len(temp_pb_ratio_list))
+            average_pb_ratio=round(average_pb_ratio,2)
             total_number_pb_ratio=len(sorted_pb_ratio_list)
             if(target_number>average_pb_ratio):
                 pb_ratio_categories=1 # 市賬率超過行業平均值
@@ -1312,13 +1368,11 @@ def get_future():
                 pb_ratio_categories=3 # 市賬率低於行業平均值
             print(pb_ratio_categories)
             print("----------------")
-        if(stock_pb_ratio=='N/A'):
-            pb_ratio_categories=None
-            average_pb_ratio=None
-            pb_ratio_rank=None
-            total_number_pb_ratio=None
+
+            
             
         # find annual revenue growth (年度收入增長) of class in same categories
+        print(stock_ARG)
         if(stock_ARG!='N/A'):
             target_number = float(stock_ARG.strip().strip("%"))/100 
             sorted_ARG_list = sorted(temp_ARG_list,reverse=True) 
@@ -1330,11 +1384,12 @@ def get_future():
             for ARG in sorted_ARG_list:
                 total_ARG=total_ARG+ARG
             average_ARG=total_ARG/len(sorted_ARG_list)
+            average_ARG=round(average_ARG,2)
             if(target_number>average_ARG):
                 ARG_categories=1 # 年度收入增長超過行業平均值
-            if(target_number==stock_pb_ratio):
+            if(target_number==average_ARG):
                 ARG_categories=2 # 年度收入增長等於行業平均值
-            if(target_number<average_pb_ratio):
+            if(target_number<average_ARG):
                 ARG_categories=3 # 年度收入增長低於行業平均值
             print(ARG_categories)
         else:
@@ -1348,7 +1403,7 @@ def get_future():
     
     return_list=[]
     return_list.append({
-    #'categories_name': categories_name,
+    'categories_name': categories_name,
     'EPS_growth': EPS_growth,
     'last_year_revenue_percent': last_year_revenue_percent,
     'pe_ratio_categories': pe_ratio_categories,
@@ -1361,7 +1416,7 @@ def get_future():
     'total_number_pb_ratio': total_number_pb_ratio,
     'annual_revenue_growth': revenue_growth, 
     'annual_revenue_growth_rank': ARG_rank,
-    'total_number_annual_revenue_growth': ARG_categories
+    'total_number_annual_revenue_growth': total_number_ARG
     #N/A==NONE   
     })
     return jsonify(return_list)
