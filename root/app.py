@@ -924,52 +924,54 @@ def stock_split():
 # localhost:5000/get_news
 # {"stock": "9988.hk"}      
 # @app.route('/get_news', methods=['POST'])
-# def get_future():
-#     json_data = request.json
-#     symbol = json_data['stock']
-#     stock_name = yf_to_aa(symbol)
-#     return_list = []
-#     result = None
-#     cookie_list = [
-#         f'MasterSymbol={stock_name}; LatestRTQuotedStocks={stock_name}; AAWS=; __utmz=177965731.1706548775.1.1.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/company-fundamental/; _ga=GA1.1.1111401661.1706548779; mLang=TC; CookiePolicyCheck=0; __utma=177965731.867252439.1706548775.1706632264.1706709816.3; __utmc=177965731; __utmc=81143559; cto_bundle=GzvXhl9uYnFKcWxpQzBSbTZ3ckRsMkR1SVpCMEhqeks5YVk2ZHR6VnhJOGxORmdCQ3dPS3JvaHklMkJTS1p5MlMlMkZaazMxTUN1bGtNWDFlbVEya2V4R1JBN1RTOWs4RmRLV0dhYWZOcUVEZm4wVDFhTXE0TXV0NmtJQjJtQnlSZkprM3JsS0dvcHpmanE0Uk9yb0hOQVZ1TUJ2Z2dBJTNEJTNE; _ga_MW096YVQH9=GS1.1.1706710420.1.0.1706710420.0.0.0; NewChart=Mini_Color=1; __utmt_a3=1; __utma=81143559.1648372063.1706548775.1706709838.1706712121.4; __utmz=81143559.1706712121.4.2.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/peer.aspx; __utmt_a2=1; __utmt_b=1; aa_cookie=27.109.218.9_63070_1706714877; __gads=ID=0554592d72201b43:T=1706548776:RT=1706712517:S=ALNI_MYAXodkQ_RUUnwvogWLuzRAOgsIRw; __gpi=UID=00000cf386237f10:T=1706548776:RT=1706712517:S=ALNI_MbCipQTizyo4ttg4DkAGd2qduIiIw; __eoi=ID=0eb93aed36a03300:T=1706632265:RT=1706712517:S=AA-AfjZlC4icUga4POBjQvB5Cqef; __utmb=177965731.18.10.1706709816; __utmb=81143559.18.10.1706712121; _ga_FL2WFCGS0Y=GS1.1.1706709817.3.1.1706712630.0.0.0; _ga_38RQTHE076=GS1.1.1706709819.17.1.1706712631.0.0.0',
-#     ]
+def get_news():
+    json_data = request.json
+    symbol = json_data['stock']
+    stock_name = yf_to_aa(symbol)
+    return_list = []
+    result = None
+    cookie_list = [
+        f'MasterSymbol={stock_name}; LatestRTQuotedStocks={stock_name}; AAWS=; __utmz=177965731.1706548775.1.1.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/company-fundamental/; _ga=GA1.1.1111401661.1706548779; mLang=TC; CookiePolicyCheck=0; __utma=177965731.867252439.1706548775.1706632264.1706709816.3; __utmc=177965731; __utmc=81143559; cto_bundle=GzvXhl9uYnFKcWxpQzBSbTZ3ckRsMkR1SVpCMEhqeks5YVk2ZHR6VnhJOGxORmdCQ3dPS3JvaHklMkJTS1p5MlMlMkZaazMxTUN1bGtNWDFlbVEya2V4R1JBN1RTOWs4RmRLV0dhYWZOcUVEZm4wVDFhTXE0TXV0NmtJQjJtQnlSZkprM3JsS0dvcHpmanE0Uk9yb0hOQVZ1TUJ2Z2dBJTNEJTNE; _ga_MW096YVQH9=GS1.1.1706710420.1.0.1706710420.0.0.0; NewChart=Mini_Color=1; __utmt_a3=1; __utma=81143559.1648372063.1706548775.1706709838.1706712121.4; __utmz=81143559.1706712121.4.2.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/peer.aspx; __utmt_a2=1; __utmt_b=1; aa_cookie=27.109.218.9_63070_1706714877; __gads=ID=0554592d72201b43:T=1706548776:RT=1706712517:S=ALNI_MYAXodkQ_RUUnwvogWLuzRAOgsIRw; __gpi=UID=00000cf386237f10:T=1706548776:RT=1706712517:S=ALNI_MbCipQTizyo4ttg4DkAGd2qduIiIw; __eoi=ID=0eb93aed36a03300:T=1706632265:RT=1706712517:S=AA-AfjZlC4icUga4POBjQvB5Cqef; __utmb=177965731.18.10.1706709816; __utmb=81143559.18.10.1706712121; _ga_FL2WFCGS0Y=GS1.1.1706709817.3.1.1706712630.0.0.0; _ga_38RQTHE076=GS1.1.1706709819.17.1.1706712631.0.0.0',
+    ]
 
-#     url = f'http://www.aastocks.com/tc/stocks/analysis/company-fundamental/earnings-summary?symbol={stock_name}&period=4'
-#     headers = {
-#         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-#         'Accept-Encoding': 'gzip, deflate',
-#         'Accept-Language': 'en-US,en;q=0.9',
-#         'Cache-Control': 'max-age=0',
-#         'Connection': 'keep-alive',
-#         'Cookie': random.choice(cookie_list).format(stock_name = stock_name),
-#         'Host': 'www.aastocks.com',
-#         'Upgrade-Insecure-Requests': '1',
-#         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
-#     }
-#     try:
-#         result = requests.get(
-#             url, timeout=40, headers=headers, verify=False
-#         ).text
-#     soup = BeautifulSoup(result, features='html.parser')
-#     anchor =soup.find('div',{'class': 'latestnews'})
-#     print(anchor)
-#     if not anchor:
-#         # stock not found
-#         return jsonify({
-#             'error': 2,
-#         })
+    url = f'http://www.aastocks.com/tc/stocks/analysis/company-fundamental/earnings-summary?symbol={stock_name}&period=4'
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive',
+        'Cookie': random.choice(cookie_list).format(stock_name = stock_name),
+        'Host': 'www.aastocks.com',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+    }
+    try:
+        result = requests.get(
+            url, timeout=40, headers=headers, verify=False
+        ).text
+    soup = BeautifulSoup(result, features='html.parser')
+    anchor =soup.find('div',{'class': 'latestnews'})
+    print(anchor)
+    if not anchor:
+        # stock not found
+        return jsonify({
+            'error': 2,
+        })
 
-#     except requests.exceptions.ConnectionError as e:
-#         print(f'ERROR({symbol}): {e}')
-#         return jsonify({
-#             'error': 1,
-#         })
+    except requests.exceptions.ConnectionError as e:
+        print(f'ERROR({symbol}): {e}')
+        return jsonify({
+            'error': 1,
+        })
 
-#     return_list.append({
+    return_list.append({
 
-#     })
-#     return jsonify(return_list)
-    
+    })
+    return jsonify(return_list)
+
+
+
 
 # get stock EPS/年度收入增長
 # -- parameters --
