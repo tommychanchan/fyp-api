@@ -923,52 +923,52 @@ def stock_split():
 # for api test
 # localhost:5000/get_news
 # {"stock": "9988.hk"}      
-@app.route('/get_news', methods=['POST'])
-def get_future():
-    json_data = request.json
-    symbol = json_data['stock']
-    stock_name = yf_to_aa(symbol)
-    return_list = []
-    result = None
-    cookie_list = [
-        f'MasterSymbol={stock_name}; LatestRTQuotedStocks={stock_name}; AAWS=; __utmz=177965731.1706548775.1.1.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/company-fundamental/; _ga=GA1.1.1111401661.1706548779; mLang=TC; CookiePolicyCheck=0; __utma=177965731.867252439.1706548775.1706632264.1706709816.3; __utmc=177965731; __utmc=81143559; cto_bundle=GzvXhl9uYnFKcWxpQzBSbTZ3ckRsMkR1SVpCMEhqeks5YVk2ZHR6VnhJOGxORmdCQ3dPS3JvaHklMkJTS1p5MlMlMkZaazMxTUN1bGtNWDFlbVEya2V4R1JBN1RTOWs4RmRLV0dhYWZOcUVEZm4wVDFhTXE0TXV0NmtJQjJtQnlSZkprM3JsS0dvcHpmanE0Uk9yb0hOQVZ1TUJ2Z2dBJTNEJTNE; _ga_MW096YVQH9=GS1.1.1706710420.1.0.1706710420.0.0.0; NewChart=Mini_Color=1; __utmt_a3=1; __utma=81143559.1648372063.1706548775.1706709838.1706712121.4; __utmz=81143559.1706712121.4.2.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/peer.aspx; __utmt_a2=1; __utmt_b=1; aa_cookie=27.109.218.9_63070_1706714877; __gads=ID=0554592d72201b43:T=1706548776:RT=1706712517:S=ALNI_MYAXodkQ_RUUnwvogWLuzRAOgsIRw; __gpi=UID=00000cf386237f10:T=1706548776:RT=1706712517:S=ALNI_MbCipQTizyo4ttg4DkAGd2qduIiIw; __eoi=ID=0eb93aed36a03300:T=1706632265:RT=1706712517:S=AA-AfjZlC4icUga4POBjQvB5Cqef; __utmb=177965731.18.10.1706709816; __utmb=81143559.18.10.1706712121; _ga_FL2WFCGS0Y=GS1.1.1706709817.3.1.1706712630.0.0.0; _ga_38RQTHE076=GS1.1.1706709819.17.1.1706712631.0.0.0',
-    ]
+# @app.route('/get_news', methods=['POST'])
+# def get_future():
+#     json_data = request.json
+#     symbol = json_data['stock']
+#     stock_name = yf_to_aa(symbol)
+#     return_list = []
+#     result = None
+#     cookie_list = [
+#         f'MasterSymbol={stock_name}; LatestRTQuotedStocks={stock_name}; AAWS=; __utmz=177965731.1706548775.1.1.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/company-fundamental/; _ga=GA1.1.1111401661.1706548779; mLang=TC; CookiePolicyCheck=0; __utma=177965731.867252439.1706548775.1706632264.1706709816.3; __utmc=177965731; __utmc=81143559; cto_bundle=GzvXhl9uYnFKcWxpQzBSbTZ3ckRsMkR1SVpCMEhqeks5YVk2ZHR6VnhJOGxORmdCQ3dPS3JvaHklMkJTS1p5MlMlMkZaazMxTUN1bGtNWDFlbVEya2V4R1JBN1RTOWs4RmRLV0dhYWZOcUVEZm4wVDFhTXE0TXV0NmtJQjJtQnlSZkprM3JsS0dvcHpmanE0Uk9yb0hOQVZ1TUJ2Z2dBJTNEJTNE; _ga_MW096YVQH9=GS1.1.1706710420.1.0.1706710420.0.0.0; NewChart=Mini_Color=1; __utmt_a3=1; __utma=81143559.1648372063.1706548775.1706709838.1706712121.4; __utmz=81143559.1706712121.4.2.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/peer.aspx; __utmt_a2=1; __utmt_b=1; aa_cookie=27.109.218.9_63070_1706714877; __gads=ID=0554592d72201b43:T=1706548776:RT=1706712517:S=ALNI_MYAXodkQ_RUUnwvogWLuzRAOgsIRw; __gpi=UID=00000cf386237f10:T=1706548776:RT=1706712517:S=ALNI_MbCipQTizyo4ttg4DkAGd2qduIiIw; __eoi=ID=0eb93aed36a03300:T=1706632265:RT=1706712517:S=AA-AfjZlC4icUga4POBjQvB5Cqef; __utmb=177965731.18.10.1706709816; __utmb=81143559.18.10.1706712121; _ga_FL2WFCGS0Y=GS1.1.1706709817.3.1.1706712630.0.0.0; _ga_38RQTHE076=GS1.1.1706709819.17.1.1706712631.0.0.0',
+#     ]
 
-    url = f'http://www.aastocks.com/tc/stocks/analysis/company-fundamental/earnings-summary?symbol={stock_name}&period=4'
-    headers = {
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'Accept-Encoding': 'gzip, deflate',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Cache-Control': 'max-age=0',
-        'Connection': 'keep-alive',
-        'Cookie': random.choice(cookie_list).format(stock_name = stock_name),
-        'Host': 'www.aastocks.com',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
-    }
-    try:
-        result = requests.get(
-            url, timeout=40, headers=headers, verify=False
-        ).text
-    soup = BeautifulSoup(result, features='html.parser')
-    anchor =soup.find('div',{'class': 'latestnews'})
-    print(anchor)
-    if not anchor:
-        # stock not found
-        return jsonify({
-            'error': 2,
-        })
+#     url = f'http://www.aastocks.com/tc/stocks/analysis/company-fundamental/earnings-summary?symbol={stock_name}&period=4'
+#     headers = {
+#         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+#         'Accept-Encoding': 'gzip, deflate',
+#         'Accept-Language': 'en-US,en;q=0.9',
+#         'Cache-Control': 'max-age=0',
+#         'Connection': 'keep-alive',
+#         'Cookie': random.choice(cookie_list).format(stock_name = stock_name),
+#         'Host': 'www.aastocks.com',
+#         'Upgrade-Insecure-Requests': '1',
+#         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+#     }
+#     try:
+#         result = requests.get(
+#             url, timeout=40, headers=headers, verify=False
+#         ).text
+#     soup = BeautifulSoup(result, features='html.parser')
+#     anchor =soup.find('div',{'class': 'latestnews'})
+#     print(anchor)
+#     if not anchor:
+#         # stock not found
+#         return jsonify({
+#             'error': 2,
+#         })
 
-    except requests.exceptions.ConnectionError as e:
-        print(f'ERROR({symbol}): {e}')
-        return jsonify({
-            'error': 1,
-        })
+#     except requests.exceptions.ConnectionError as e:
+#         print(f'ERROR({symbol}): {e}')
+#         return jsonify({
+#             'error': 1,
+#         })
 
-    return_list.append({
+#     return_list.append({
 
-    })
-    return jsonify(return_list)
+#     })
+#     return jsonify(return_list)
     
 
 # get stock EPS/年度收入增長
@@ -989,6 +989,9 @@ def get_future():
     symbol = json_data['stock']
     stock_name = yf_to_aa(symbol)
     return_list = []
+
+    stock_pe_ratio = None
+    stock_pb_ratio = None
 
     url = f'http://www.aastocks.com/tc/stocks/analysis/peer.aspx?symbol={stock_name}'
     headers = {
@@ -1015,8 +1018,11 @@ def get_future():
             stock_id = temp_soup.find('a').text[:-3]
             pe_ratio = datum['d6']  # 市盈率: can be "N/A"/"無盈利"/"33.06"...
             pb_ratio = datum['d7']  # 市賬率: can be "N/A"/"3.43"...
+            if stock_name == stock_id:
+                stock_pe_ratio = pe_ratio
+                stock_pb_ratio = pb_ratio
             pe_pb_list.append(f'{stock_id}: {pe_ratio} & {pb_ratio}')
-    
+
     except requests.exceptions.ConnectionError as e:
         print(f'ERROR: {e}')
 
@@ -1071,10 +1077,10 @@ def get_future():
         result = requests.get(
             url, timeout=40, headers=headers, verify=False
         ).text
-    
-        
-        
-        
+
+
+
+
         #finding the revenue of the stock
         soup = BeautifulSoup(result, features='html.parser')
         anchor =soup.select('td.cfvalue.txt_r.cls.bold')
@@ -1107,9 +1113,9 @@ def get_future():
         print(two_year_revenue)
         print(three_year_revenue)
         if(last_year_revenue !="N/A" and two_year_revenue !="N/A" and three_year_revenue !="N/A" ):
-            last_year_revenue=float(last_year_revenue)
-            two_year_revenue=float(two_year_revenue)
-            three_year_revenue=float(three_year_revenue)
+            last_year_revenue=float(last_year_revenue.replace(',', ''))
+            two_year_revenue=float(two_year_revenue.replace(',', ''))
+            three_year_revenue=float(three_year_revenue.replace(',', ''))
             if(last_year_revenue>two_year_revenue and two_year_revenue>three_year_revenue):
                 revenue_growth=1 #(increasing)
             if(last_year_revenue<=two_year_revenue and two_year_revenue>=three_year_revenue and last_year_revenue>=three_year_revenue):
@@ -1141,7 +1147,7 @@ def get_future():
         if(anchor[1].text.strip()!="-"):
             last_year_revenue_percent = float(anchor[1].text.strip())
         else:
-            last_year_revenue_percent=(float(last_year_revenue)-float(two_year_revenue))/float(two_year_revenue)
+            last_year_revenue_percent=(float(last_year_revenue.replace(',', ''))-float(two_year_revenue.replace(',', '')))/float(two_year_revenue.replace(',', ''))
             last_year_revenue_percent=last_year_revenue_percent*100
             last_year_revenue_percent=round(last_year_revenue_percent, 2)
         print(last_year_revenue_percent)
@@ -1239,10 +1245,10 @@ def get_future():
         anchor = soup.find('table',{'id': 'tblTS2'})
         x=anchor.find_all('td',{'class':'txt_r'})
         if not anchor:
-                # stock not found
-                return jsonify({
-                    'error': 2,
-                })
+            # stock not found
+            return jsonify({
+                'error': 2,
+            })
         i=0
         while i+1< len(x):
             while i%10==2:
@@ -1307,10 +1313,10 @@ def get_future():
         anchor = soup.find('table',{'id': 'tblTS2'})
         x=anchor.find_all('td',{'class':'txt_r'})
         if not anchor:
-                # stock not found
-                return jsonify({
-                    'error': 2,
-                })
+            # stock not found
+            return jsonify({
+                'error': 2,
+            })
         i=0
         while i+1<len(x):
             while i%9==5:
@@ -1335,34 +1341,19 @@ def get_future():
         soup = BeautifulSoup(result, features='html.parser')
         anchor = soup.find('span',{'class': 'PEAvgShort'})
         average_pe_ratio=anchor.parent.find_next_sibling().text.strip()
-        
 
-        url = f"http://localhost:{PORT}/stock_info"
-        headers = {}
-        payload = {'stocks': [symbol]}
-        try:
-            result = requests.post(
-                url, timeout=40, headers=headers, json=payload, verify=False
-            ).text
 
-            result_json = json.loads(result)[0]
-            if result_json.get('error') == 1:
-                # cannot connect to aastocks server
-                print('ERROR: Cannot connect to AASTOCKS server.')
-            if(result_json.get('priceToEarningsRatio')=="N/A"or result_json.get('priceToEarningsRatio')=="無盈利"):
-                stock_pe_ratio=result_json.get('priceToEarningsRatio')
-            else:
-                stock_pe_ratio=round(float(result_json.get('priceToEarningsRatio')),2)
-            if(result_json.get('priceToBookRatio')=="N/A"or result_json.get('priceToBookRatio')=="無盈利"):
-                stock_pb_ratio=result_json.get('priceToBookRatio')
-            else:
-                stock_pb_ratio=round(float(result_json.get('priceToBookRatio')),2)
-            print('市盈率:')
-            print(stock_pe_ratio)
-            print('市賬率:')
-            print(stock_pb_ratio)
-        except requests.exceptions.ConnectionError as e:
-            print(f'ERROR({stock}): {e}')
+
+        # find pe ratio and pb ratio of current stock
+        trs = soup.find('table', {'id': 'tblTS2'}).find('tbody').find_all('tr')
+        for tr in trs:
+            if stock_name == tr.find('td', {'class': 'nls'}).find('a').text.strip()[:-3]:
+                tds = tr.find_all('td')
+                stock_pe_ratio = tds[6].text.strip()
+                stock_pb_ratio = tds[7].text.strip()
+
+
+
 
         # find pe ratio rank and number of class in same categories
         if(stock_pe_ratio=='N/A'):
@@ -1397,7 +1388,6 @@ def get_future():
 
 
         # find pb ratio rank and number of class in same categories
-            
         if(stock_pb_ratio=='N/A'):
             pb_ratio_categories=None
             average_pb_ratio=None
@@ -1429,8 +1419,8 @@ def get_future():
             print(pb_ratio_categories)
             print("----------------")
 
-            
-            
+
+
         # find annual revenue growth (年度收入增長) of class in same categories
         print(stock_ARG)
         if(stock_ARG!='N/A'):
@@ -1460,23 +1450,23 @@ def get_future():
         return jsonify({
             'error': 1,
         })
-    
+
     return_list=[]
     return_list.append({
-    'categories_name': categories_name, #return a string, categories name
-    'EPS_growth': EPS_growth, #return a integer(1-5) or'N/A', 1 increasing ,2 overall increasing,3 average,4 overall decreasing,5 decreasing, will be 'N/A' if one of the revenue in la
-    'revenue_growth_percentage': last_year_revenue_percent, #return a float, ARG percentage  without % sign
-    'pe_ratio_categories': pe_ratio_categories, #return a integer(1-3), 'None' or '無盈利' 1 市盈率超過行業平均值, 2 市盈率等於行業平均值 ,3 市盈率低於行業平均值 , if pe ratio of that stock is "N/A" or '無盈利', this will change to itcorrespondingly
-    'average_pe_ratio': average_pe_ratio, # return a float ,'None', average pe ratio of the category, if pe_ratio_categories is "None" or '無盈利', this will be 'None' too
-    'pe_ratio_rank': pe_ratio_rank, # return a integer or 'None', rank of the pe ratio in the category ,if pe_ratio_categories is "None" or '無盈利', this will be 'None' too
-    'total_number_pe_ratio': total_number_pe_ratio, # return a integer or 'None', total number of pe ratio in the category,if pe_ratio_categories is "None" or '無盈利', this will be 'None' too
-    'pb_ratio_categories': pb_ratio_categories, # return a float, average pb ratio of the category
-    'average_pb_ratio': average_pb_ratio, #return a integer(1-3), 'None' or '無盈利' 1 市賬率超過行業平均值, 2 市賬率等於行業平均值 ,3 市賬率低於行業平均值 , if pb ratio of that stock is "N/A" or '無盈利', this will change to itcorrespondingly
-    'pb_ratio_rank': pb_ratio_rank, # return a integer or 'None', rank of the pb ratio in the category ,if pb_ratio_categories is "None" or '無盈利', this will be 'None' too
-    'total_number_pb_ratio': total_number_pb_ratio, # return a integer or 'None', total number of pb ratio in the category,if pb_ratio_categories is "None" or '無盈利', this will be 'None' too
-    'revenue_growth': revenue_growth, #return a integer(1-5) or None, 1 increasing ,2 overall increasing,3 average,4 overall decreasing,5 decreasing, will be 'N/A' if one of the revenue in last three years is 'N/A'
-    'annual_revenue_growth_rank': ARG_rank, # return a integer or 'None', rank of the ARG in the category , if ARG is 'N/A', this become 'None'
-    'total_number_annual_revenue_growth': total_number_ARG # return a integer or 'None', rank of the ARG in the category , if ARG is 'N/A', this become 'None'
+        'categories_name': categories_name, #return a string, categories name
+        'EPS_growth': EPS_growth, #return a integer(1-5) or'N/A', 1 increasing ,2 overall increasing,3 average,4 overall decreasing,5 decreasing, will be 'N/A' if one of the revenue in la
+        'revenue_growth_percentage': last_year_revenue_percent, #return a float, ARG percentage  without % sign
+        'pe_ratio_categories': pe_ratio_categories, #return a integer(1-3), 'None' or '無盈利' 1 市盈率超過行業平均值, 2 市盈率等於行業平均值 ,3 市盈率低於行業平均值 , if pe ratio of that stock is "N/A" or '無盈利', this will change to itcorrespondingly
+        'average_pe_ratio': average_pe_ratio, # return a float ,'None', average pe ratio of the category, if pe_ratio_categories is "None" or '無盈利', this will be 'None' too
+        'pe_ratio_rank': pe_ratio_rank, # return a integer or 'None', rank of the pe ratio in the category ,if pe_ratio_categories is "None" or '無盈利', this will be 'None' too
+        'total_number_pe_ratio': total_number_pe_ratio, # return a integer or 'None', total number of pe ratio in the category,if pe_ratio_categories is "None" or '無盈利', this will be 'None' too
+        'pb_ratio_categories': pb_ratio_categories, # return a float, average pb ratio of the category
+        'average_pb_ratio': average_pb_ratio, #return a integer(1-3), 'None' or '無盈利' 1 市賬率超過行業平均值, 2 市賬率等於行業平均值 ,3 市賬率低於行業平均值 , if pb ratio of that stock is "N/A" or '無盈利', this will change to itcorrespondingly
+        'pb_ratio_rank': pb_ratio_rank, # return a integer or 'None', rank of the pb ratio in the category ,if pb_ratio_categories is "None" or '無盈利', this will be 'None' too
+        'total_number_pb_ratio': total_number_pb_ratio, # return a integer or 'None', total number of pb ratio in the category,if pb_ratio_categories is "None" or '無盈利', this will be 'None' too
+        'revenue_growth': revenue_growth, #return a integer(1-5) or None, 1 increasing ,2 overall increasing,3 average,4 overall decreasing,5 decreasing, will be 'N/A' if one of the revenue in last three years is 'N/A'
+        'annual_revenue_growth_rank': ARG_rank, # return a integer or 'None', rank of the ARG in the category , if ARG is 'N/A', this become 'None'
+        'total_number_annual_revenue_growth': total_number_ARG # return a integer or 'None', rank of the ARG in the category , if ARG is 'N/A', this become 'None'
     })
     return jsonify(return_list)
 
