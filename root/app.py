@@ -1363,12 +1363,14 @@ def get_future():
             average_pe_ratio=None
             pe_ratio_rank=None
             total_number_pe_ratio=None
+            stock_pe_ratio=None
         elif(stock_pe_ratio=='無盈利'):
             pe_ratio_categories='無盈利'
             average_pe_ratio=None
             pe_ratio_rank=None
             total_number_pe_ratio=None
         else:
+            stock_pe_ratio = float(stock_pe_ratio)
             target_number = float(stock_pe_ratio)
             sorted_pe_ratio_list = sorted(temp_pe_ratio_list) 
             # Sort the list in ascending order
@@ -1395,12 +1397,14 @@ def get_future():
             average_pb_ratio=None
             pb_ratio_rank=None
             total_number_pb_ratio=None
+            stock_pb_ratio=None
         elif(stock_pb_ratio=='無盈利'):
             pb_ratio_categories='無盈利'
             average_pb_ratio=None
             pb_ratio_rank=None
             total_number_pb_ratio=None
         else:
+            stock_pb_ratio = float(stock_pb_ratio)
             target_number = float(stock_pb_ratio)
             sorted_pb_ratio_list = sorted(temp_pb_ratio_list)  # Sort the list in ascending order
             pb_ratio_rank = sorted_pb_ratio_list.index(target_number) +1  # minus 1 to get the rank (1-based indexing)
@@ -1447,6 +1451,7 @@ def get_future():
         else:
             ARG_rank=None
             ARG_categories=None
+            total_number_ARG=None
     except requests.exceptions.ConnectionError as e:
         print(f'ERROR({symbol}): {e}')
         return jsonify({
@@ -1462,10 +1467,12 @@ def get_future():
         'average_pe_ratio': average_pe_ratio, # return a float ,'None', average pe ratio of the category, if pe_ratio_categories is "None" or '無盈利', this will be 'None' too
         'pe_ratio_rank': pe_ratio_rank, # return a integer or 'None', rank of the pe ratio in the category ,if pe_ratio_categories is "None" or '無盈利', this will be 'None' too
         'total_number_pe_ratio': total_number_pe_ratio, # return a integer or 'None', total number of pe ratio in the category,if pe_ratio_categories is "None" or '無盈利', this will be 'None' too
+        'stock_pe_ratio': stock_pe_ratio, # float or '無盈利' or None
         'pb_ratio_categories': pb_ratio_categories, # return a float, average pb ratio of the category
         'average_pb_ratio': average_pb_ratio, #return a integer(1-3), 'None' or '無盈利' 1 市賬率超過行業平均值, 2 市賬率等於行業平均值 ,3 市賬率低於行業平均值 , if pb ratio of that stock is "N/A" or '無盈利', this will change to itcorrespondingly
         'pb_ratio_rank': pb_ratio_rank, # return a integer or 'None', rank of the pb ratio in the category ,if pb_ratio_categories is "None" or '無盈利', this will be 'None' too
         'total_number_pb_ratio': total_number_pb_ratio, # return a integer or 'None', total number of pb ratio in the category,if pb_ratio_categories is "None" or '無盈利', this will be 'None' too
+        'stock_pb_ratio': stock_pb_ratio, # float or '無盈利' or None
         'revenue_growth': revenue_growth, #return a integer(1-5) or None, 1 increasing ,2 overall increasing,3 average,4 overall decreasing,5 decreasing, will be 'N/A' if one of the revenue in last three years is 'N/A'
         'annual_revenue_growth_rank': ARG_rank, # return a integer or 'None', rank of the ARG in the category , if ARG is 'N/A', this become 'None'
         'total_number_annual_revenue_growth': total_number_ARG # return a integer or 'None', rank of the ARG in the category , if ARG is 'N/A', this become 'None'
