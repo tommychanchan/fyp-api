@@ -965,9 +965,11 @@ def get_news():
         print(news_url)
         title=anchor.text.strip().split()
         temp_news_title=title[1:-1]
+        print(temp_news_title)
         news_title=''
         for title in temp_news_title:
             news_title=news_title+' '+title
+        news_title=news_title[1:]
         print(news_title)
     except requests.exceptions.ConnectionError as e:
         print(f'ERROR: {e}')
