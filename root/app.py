@@ -923,7 +923,7 @@ def stock_split():
 # for api test
 # localhost:5000/get_news
 # {"stock": "9988.hk"}      
-# @app.route('/get_news', methods=['POST'])
+@app.route('/get_news', methods=['POST'])
 def get_news():
     json_data = request.json
     symbol = json_data['stock']
@@ -950,27 +950,44 @@ def get_news():
         result = requests.get(
             url, timeout=40, headers=headers, verify=False
         ).text
-    soup = BeautifulSoup(result, features='html.parser')
-    anchor =soup.find('div',{'class': 'latestnews'})
-    print(anchor)
+
+        soup = BeautifulSoup(result, features='html.parser')
+        anchor =soup.find('div',{'class': 'latestnews'})
+        print(anchor.text.strip().split()[0])
+        news_date=anchor.text.strip().split()[0]
+        news_day=news_date[:2]
+        print(news_day)
+        news_month=news_date[2:5]
+        print(news_month)
+        news_year=news_date[5:]
+        print(news_year)
+        news_url= 'http://www.aastocks.com'+anchor.a['href']
+        print(news_url)
+        title=anchor.text.strip().split()
+        temp_news_title=title[1:-1]
+        news_title=''
+        for title in temp_news_title:
+            news_title=news_title+' '+title
+        print(news_title)
+    except requests.exceptions.ConnectionError as e:
+        print(f'ERROR: {e}')
     if not anchor:
         # stock not found
         return jsonify({
             'error': 2,
         })
 
-    except requests.exceptions.ConnectionError as e:
-        print(f'ERROR({symbol}): {e}')
-        return jsonify({
-            'error': 1,
-        })
 
     return_list.append({
-
+    'news_day': news_day, #return a string of the day of the news, none if no news  
+    'news_month': news_month, #return a string of the month of the news, none if no news  
+    'news_year' : news_year,#return a string of the year of the news, none if no news  
+    'news_url': news_url, #return a string of the url of the news, none if no news  
+    'news_title': news_title #return a string of the title of the news, none if no news  
     })
     return jsonify(return_list)
 
-
+    
 
 
 # get stock EPS/年度收入增長
