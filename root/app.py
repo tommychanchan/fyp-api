@@ -17,6 +17,10 @@ from global_var import *
 
 
 PORT = os.environ.get('FLASK_RUN_PORT')
+STOCK_IDS = []
+with open('stock_ids.json', 'r') as f:
+    STOCK_IDS = json.load(f)
+
 
 
 
@@ -911,85 +915,99 @@ def stock_split():
 
     return parse_json(return_dict)
 
+
+
+
 # get latest news
 # -- parameters --
 # stock: stock id (e.g. "9988.hk"/"0008.hk")
 # -- return --
-# the date(date), url(string), and topic of lastest news of the stock(string)
+# a list of date(string), time(string), url(string), and title(string) of the stock of last 3 days
+# if no news, empty list will be returned
 # -- error messages --
 # 1: cannot connect to server
 # 2: stock id not found
 
 # for api test
 # localhost:5000/get_news
-# {"stock": "9988.hk"}      
+# {"stock": "9988.hk"}
 @app.route('/get_news', methods=['POST'])
 def get_news():
     json_data = request.json
     symbol = json_data['stock']
     stock_name = yf_to_aa(symbol)
+
+    if not symbol in STOCK_IDS:
+        # stock not found
+        return jsonify({
+            'error': 2,
+        })
+
     return_list = []
     result = None
     cookie_list = [
-        f'MasterSymbol={stock_name}; LatestRTQuotedStocks={stock_name}; AAWS=; __utmz=177965731.1706548775.1.1.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/company-fundamental/; _ga=GA1.1.1111401661.1706548779; mLang=TC; CookiePolicyCheck=0; __utma=177965731.867252439.1706548775.1706632264.1706709816.3; __utmc=177965731; __utmc=81143559; cto_bundle=GzvXhl9uYnFKcWxpQzBSbTZ3ckRsMkR1SVpCMEhqeks5YVk2ZHR6VnhJOGxORmdCQ3dPS3JvaHklMkJTS1p5MlMlMkZaazMxTUN1bGtNWDFlbVEya2V4R1JBN1RTOWs4RmRLV0dhYWZOcUVEZm4wVDFhTXE0TXV0NmtJQjJtQnlSZkprM3JsS0dvcHpmanE0Uk9yb0hOQVZ1TUJ2Z2dBJTNEJTNE; _ga_MW096YVQH9=GS1.1.1706710420.1.0.1706710420.0.0.0; NewChart=Mini_Color=1; __utmt_a3=1; __utma=81143559.1648372063.1706548775.1706709838.1706712121.4; __utmz=81143559.1706712121.4.2.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/analysis/peer.aspx; __utmt_a2=1; __utmt_b=1; aa_cookie=27.109.218.9_63070_1706714877; __gads=ID=0554592d72201b43:T=1706548776:RT=1706712517:S=ALNI_MYAXodkQ_RUUnwvogWLuzRAOgsIRw; __gpi=UID=00000cf386237f10:T=1706548776:RT=1706712517:S=ALNI_MbCipQTizyo4ttg4DkAGd2qduIiIw; __eoi=ID=0eb93aed36a03300:T=1706632265:RT=1706712517:S=AA-AfjZlC4icUga4POBjQvB5Cqef; __utmb=177965731.18.10.1706709816; __utmb=81143559.18.10.1706712121; _ga_FL2WFCGS0Y=GS1.1.1706709817.3.1.1706712630.0.0.0; _ga_38RQTHE076=GS1.1.1706709819.17.1.1706712631.0.0.0',
+        f'mLang=TC; CookiePolicyCheck=0; _ga=GA1.1.1381773272.1710588674; __utma=177965731.1381773272.1710588674.1710588674.1710588674.1; __utmc=177965731; __utmz=177965731.1710588674.1.1.utmcsr=aastocks.com.hk|utmccn=(referral)|utmcmd=referral|utmcct=/; AALTP=1; MasterSymbol={stock_name}; LatestRTQuotedStocks={stock_name}; NewChart=Mini_Color=1; AAWS2=; __utmc=81143559; NewsZoomLevel=3; aa_cookie=183.179.122.191_65205_1710592352; __utma=81143559.1381773272.1710588674.1710588712.1710592478.2; __utmz=81143559.1710592478.2.2.utmcsr=aastocks.com|utmccn=(referral)|utmcmd=referral|utmcct=/tc/stocks/quote/quick-quote.aspx; __utmt_a3=1; __utmt_a2=1; __utmt_b=1; __utmb=81143559.4.8.1710592478; _ga_FL2WFCGS0Y=GS1.1.1710592538.2.1.1710592539.0.0.0; _ga_38RQTHE076=GS1.1.1710592538.2.1.1710592539.0.0.0; __utmb=177965731.36.9.1710592545018; _ga_MW096YVQH9=GS1.1.1710588675.1.1.1710592545.0.0.0',
     ]
 
-    url = f'http://www.aastocks.com/tc/stocks/analysis/company-fundamental/earnings-summary?symbol={stock_name}&period=4'
     headers = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'Accept-Encoding': 'gzip, deflate',
         'Accept-Language': 'en-US,en;q=0.9',
         'Cache-Control': 'max-age=0',
         'Connection': 'keep-alive',
-        'Cookie': random.choice(cookie_list).format(stock_name = stock_name),
+        'Cookie': random.choice(cookie_list),
         'Host': 'www.aastocks.com',
+        'Referer': f'http://www.aastocks.com/tc/stocks/analysis/stock-aafn/{stock_name}/0/hk-stock-news/1',
         'Upgrade-Insecure-Requests': '1',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
     }
-    try:
-        result = requests.get(
-            url, timeout=40, headers=headers, verify=False
-        ).text
-
-        soup = BeautifulSoup(result, features='html.parser')
-        anchor =soup.find('div',{'class': 'latestnews'})
-        print(anchor.text.strip().split()[0])
-        news_date=anchor.text.strip().split()[0]
-        news_day=news_date[:2]
-        print(news_day)
-        news_month=news_date[2:5]
-        print(news_month)
-        news_year=news_date[5:]
-        print(news_year)
-        news_url= 'http://www.aastocks.com'+anchor.a['href']
-        print(news_url)
-        title=anchor.text.strip().split()
-        temp_news_title=title[1:-1]
-        print(temp_news_title)
-        news_title=''
-        for title in temp_news_title:
-            news_title=news_title+' '+title
-        news_title=news_title[1:]
-        print(news_title)
-    except requests.exceptions.ConnectionError as e:
-        print(f'ERROR: {e}')
-    if not anchor:
-        # stock not found
-        return jsonify({
-            'error': 2,
-        })
 
 
-    return_list.append({
-    'news_day': news_day, #return a string of the day of the news, none if no news  
-    'news_month': news_month, #return a string of the month of the news, none if no news  
-    'news_year' : news_year,#return a string of the year of the news, none if no news  
-    'news_url': news_url, #return a string of the url of the news, none if no news  
-    'news_title': news_title #return a string of the title of the news, none if no news  
-    })
+
+    news_time = '9999999999'
+    news_id = ''
+    stop = False
+    datum_date = None
+    stop_date = None
+    news_url = None
+    while not stop:
+        url = f'http://www.aastocks.com/tc/resources/datafeed/getmorenews.ashx?cat=hk-stocks-all&newstime={news_time}&newsid={news_id}&period=0&key=&symbol={stock_name}&newsrev=7'
+        try:
+            result = requests.get(
+                url, timeout=40, headers=headers, verify=False
+            ).text
+            data = json.loads(result)
+            if type(data) != list:
+                # no data
+                break
+        except requests.exceptions.ConnectionError as e:
+            print(f'ERROR: {e}')
+            return jsonify({
+                'error': 1,
+            })
+        for datum in data:
+            datum_date = datum.get('dt')[:10].replace('/', '-')
+            stop_date = format_date(get_current_date() + datetime.timedelta(days=-2))
+            if datum_date >= stop_date:
+                news_url = f"http://www.aastocks.com/tc/stocks/analysis/stock-aafn-con/{stock_name}/{datum.get('s')}/{datum.get('id')}/hk-stock-news"
+                return_list.append({
+                    'url': news_url,
+                    'title': datum.get('h'),
+                    'date': datum_date,
+                    'time': datum.get('dt')[11:]
+                })
+            else:
+                stop = True
+                break
+
+        news_time = data[-1].get('dtd')
+        news_id = data[-1].get('id')
     return jsonify(return_list)
 
-    
+
+
+
+
 
 
 # get stock EPS/年度收入增長
