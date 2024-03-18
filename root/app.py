@@ -104,6 +104,18 @@ def rasa():
             'error': 1,
         }
 
+    if to_return == []:
+        try:
+            result = requests.post(
+                url, timeout=40, headers=headers, json=payload, verify=False
+            ).text
+
+            to_return = json.loads(result)
+        except requests.exceptions.ConnectionError as e:
+            print(f'ERROR: {e}')
+            to_return = {
+                'error': 1,
+            }
 
     return parse_json(to_return)
 
