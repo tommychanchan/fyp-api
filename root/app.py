@@ -64,6 +64,59 @@ def get_new_id():
 
 
 
+
+# wrapper of rasa api
+# -- parameters --
+# sender: the unique user ID
+# message: the message of the sender
+# -- return --
+# return what rasa api return directly
+# e.g.
+# [{
+#     "recipient_id": "Sender",
+#     "text": "\u963f\u91cc\u5df4\u5df4\uff0d\uff33\uff37(09988) \u7684\u73fe\u50f9\u662f 71.3\u3002"
+# }]
+# -- error messages --
+# 1: cannot connect to server
+
+# for api test
+# localhost:5000/rasa
+# {"sender": "Sender", "message": "阿里股價幾多？" }
+@app.route('/rasa', methods=['POST'])
+def rasa():
+    json_data = request.json
+    # sender = json_data['sender']
+    # message = json_data['message']
+
+
+    url = f'{rasa_ip}/webhooks/rest/webhook'
+    headers = {}
+    payload = json_data
+    try:
+        result = requests.post(
+            url, timeout=40, headers=headers, json=payload, verify=False
+        ).text
+
+        to_return = json.loads(result)
+    except requests.exceptions.ConnectionError as e:
+        print(f'ERROR: {e}')
+        to_return = {
+            'error': 1,
+        }
+
+
+    return parse_json(to_return)
+
+
+
+
+
+
+
+
+
+
+
 # ----- for rasa to call ----- #
 
 
@@ -1021,7 +1074,7 @@ def get_news():
 
 # for api test
 # localhost:5000/get_future
-# {"stock": "9988.hk"}      
+# {"stock": "9988.hk"}
 @app.route('/get_future', methods=['POST'])
 def get_future():
     json_data = request.json
@@ -1052,6 +1105,7 @@ def get_future():
         temp_list = json.loads((result[result.index('tsData')+8:result.index('];', result.index('tsData'))+1]).strip().replace('d0', '"d0"').replace('d1', '"d1"').replace('d2', '"d2"').replace('d3', '"d3"').replace('d4', '"d4"').replace('d5', '"d5"').replace('d6', '"d6"').replace('d7', '"d7"').replace('d8', '"d8"').replace('d9', '"d9"').replace('"d1"0', '"d10"'))
         temp_soup = None
         pe_pb_list=[]
+        industry_total = len(temp_list)
         for datum in temp_list:
             temp_soup = BeautifulSoup(datum['d0'], features='html.parser')
             stock_id = temp_soup.find('a').text[:-3]
@@ -1361,6 +1415,7 @@ def get_future():
             while i%9==5:
                 pe_ratio_list.append(x[i].text.strip().replace("[", "").replace("]", ""))
                 pb_ratio_list.append(x[i+1].text.strip().replace("[", "").replace("]", ""))
+                industry_total += 1
                 i = i + 1
             i = i + 1
         
@@ -1512,59 +1567,11 @@ def get_future():
         'stock_pb_ratio': stock_pb_ratio, # float or '無盈利' or None
         'revenue_growth': revenue_growth, #return a integer(1-5) or None, 1 increasing ,2 overall increasing,3 average,4 overall decreasing,5 decreasing, will be 'N/A' if one of the revenue in last three years is 'N/A'
         'annual_revenue_growth_rank': ARG_rank, # return a integer or 'None', rank of the ARG in the category , if ARG is 'N/A', this become 'None'
-        'total_number_annual_revenue_growth': total_number_ARG # return a integer or 'None', rank of the ARG in the category , if ARG is 'N/A', this become 'None'
+        'total_number_annual_revenue_growth': total_number_ARG, # return a integer or 'None', rank of the ARG in the category , if ARG is 'N/A', this become 'None'
+        'industry_total': industry_total,
     })
     return jsonify(return_list)
 
-
-
-
-
-
-
-
-
-# wrapper of rasa api
-# -- parameters --
-# sender: the unique user ID
-# message: the message of the sender
-# -- return --
-# return what rasa api return directly
-# e.g.
-# [{
-#     "recipient_id": "Sender",
-#     "text": "\u963f\u91cc\u5df4\u5df4\uff0d\uff33\uff37(09988) \u7684\u73fe\u50f9\u662f 71.3\u3002"
-# }]
-# -- error messages --
-# 1: cannot connect to server
-
-# for api test
-# localhost:5000/rasa
-# {"sender": "Sender", "message": "阿里股價幾多？" }
-@app.route('/rasa', methods=['POST'])
-def rasa():
-    json_data = request.json
-    # sender = json_data['sender']
-    # message = json_data['message']
-
-
-    url = f'{rasa_ip}/webhooks/rest/webhook'
-    headers = {}
-    payload = json_data
-    try:
-        result = requests.post(
-            url, timeout=40, headers=headers, json=payload, verify=False
-        ).text
-
-        to_return = json.loads(result)
-    except requests.exceptions.ConnectionError as e:
-        print(f'ERROR: {e}')
-        to_return = {
-            'error': 1,
-        }
-
-
-    return parse_json(to_return)
 
 
 
