@@ -982,6 +982,67 @@ def stock_split():
 
 
 
+# get latest index
+# -- parameters --
+# None
+# -- return --
+# A list of index, in the index list,which contain current stock price(float), change(float),change%(float),opening price(float),turnover(float),highest price(float), lowest price(float), and weekly price change(float)
+# -- error messages --
+# 1: cannot connect to server
+# 2: stock id not found
+
+# for api test
+# localhost:5000/get_index
+     
+@app.route('/get_index', methods=['POST'])
+def get_news():
+    json_data = request.json
+    symbol = json_data['stock']
+    stock_name = yf_to_aa(symbol)
+    return_list = []
+    result = None
+    cookie_list = [
+        f'mLang=TC; _ga=GA1.1.1412667535.1709474457; NewChart=Mini_Color=1; AAWS2=; AAWS=; DetailChartDisplay=3; _cc_id=9542af56eef4e8e8d665aebe000f91ae; NewsZoomLevel=3; DynamicChart2=CPT=0&CPTS=&CPTM=&P=52&VB=1&CVB=1&CT=candles&T=dark&EP=1&EE=1&EAHFT=1&ES=0&DC=red&SPUP=1&ISQ=0&MI=SMA|10|20|50|100|150&TI1=Volume&TI2=RSI|14&TI3=MACD|12|26|9&TI4=&TI5=&H=300|100|100|100|null|null&ME=1|1|1|1|1&ConfigName=&ConfigID=1; SHMasterSymbol=603719; CNHK=BrowserHistory=603719.SH; _ga_JGELR0JK0N=GS1.1.1710170910.1.0.1710170919.0.0.0; LatestWarrantCbbc=26789%3B59345%3B14711; panoramaId=301586df4f9bdf722d764d902f444945a70264b20153567be835abff1d281e28; panoramaIdType=panoIndiv; AADetailChart=P%7c6%2cT%7c1%2cV%7ctrue%2cB%7c3%2cD%7c1%2cDP%7c10%7e20%7e50%7e100%7e150%2cL1%7c2%7e14%2cL2%7c3%7e12%7e26%7e9%2cL3%7c12%2cCO%7c1%2cCT%7c1%2cCS%7c%2cSP%7chide%2cAHFT%7ctrue; MasterSymbol=09988; LatestRTQuotedStocks=05545%3B04618%3B00308%3B00341%3B02099%3B03718%3B26789%3B59345%3B02477%3B14711%3B09633%3B09879%3B06990%3B08547%3B05641%3B02511%3B00988%3B00998%3B09888%3B09988; panoramaId_expiry=1711289610736; _ga_MW096YVQH9=GS1.1.1710684937.10.1.1710684985.0.0.0; aa_cookie=202.155.245.119_26245_1710824105; CookiePolicyCheck=0; __utmc=177965731; __utmc=81143559; BMPBrokerage=3/19/2024 12:16:54 PM; __utma=177965731.1232723388.1709474457.1710821648.1710821814.24; __utmz=177965731.1710821814.24.8.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided); __utma=81143559.1412667535.1709474457.1710821648.1710821814.24; __utmz=81143559.1710821814.24.8.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided); cto_bundle=b9u1-V8lMkZZanJuT01DZFM5cVFjMG5xc3N3U1Zsd3dJQklIWE9tTmdmcThNOFdiQ08zTlU4bEpEQlU3MXEyWnd2ZXBxOUh1JTJGVVAwM1JJdFRpWFE4TFFBdjV4S2g5T1BnektlcGw3RDRtSlEzQ0VSZTRtbFUyajlHUW1PSGtEWVg5eVJ4UDVqOTNFSVkxMll6NUNjRGRFJTJGdUR2b3clM0QlM0Q; __utmt_a3=1; __utmb=177965731.3.10.1710821814; __utmt_a2=1; __utmt_b=1; __utmb=81143559.6.10.1710821814; _ga_FL2WFCGS0Y=GS1.1.1710821647.29.1.1710822489.0.0.0; _ga_38RQTHE076=GS1.1.1710821647.29.1.1710822489.0.0.0; __gads=ID=8eb119efaf452d73:T=1709474461:RT=1710822489:S=ALNI_MYydS91k06vzWoYHzeDRrjypAvDRA; __gpi=UID=00000d22d01b2b44:T=1709474461:RT=1710822489:S=ALNI_Ma339b4BWxndbEDhCGn0GMKOwWEsQ; __eoi=ID=0c4c3a2d2799cbd2:T=1709474461:RT=1710822489:S=AA-AfjZ1HMgnt1xZ43IG5c1NhMJm',
+    ]
+
+    url = f'http://www.aastocks.com/tc/stocks/market/index/hk-index.aspx'
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive',
+        'Cookie': random.choice(cookie_list).format(stock_name = stock_name),
+        'Host': 'www.aastocks.com',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+    }
+    try:
+        result = requests.get(
+            url, timeout=40, headers=headers, verify=False
+        ).text
+
+        soup = BeautifulSoup(result, features='html.parser')
+        anchor =soup.findAll('tr',{'class': 'tblM_row firstrow'})
+        print(anchor)
+    except requests.exceptions.ConnectionError as e:
+        print(f'ERROR: {e}')
+    if not anchor:
+        # stock not found
+        return jsonify({
+            'error': 2,
+        })
+
+
+    '''return_list.append({
+    'news_day': news_day, #return a string of the day of the news, none if no news  
+    'news_month': news_month, #return a string of the month of the news, none if no news  
+    'news_year' : news_year,#return a string of the year of the news, none if no news  
+    'news_url': news_url, #return a string of the url of the news, none if no news  
+    'news_title': news_title #return a string of the title of the news, none if no news  
+    })
+    return jsonify(return_list)'''
+    return
 
 # get latest news
 # -- parameters --
