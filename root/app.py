@@ -995,7 +995,7 @@ def stock_split():
 # localhost:5000/get_index
      
 @app.route('/get_index', methods=['POST'])
-def get_news():
+def get_index():
     json_data = request.json
     symbol = json_data['stock']
     stock_name = yf_to_aa(symbol)
