@@ -92,9 +92,17 @@ my_stock_qs = [
     '我2024/02/21買入了2手{stock}，股價是101.2',
     '我2024/03/12賣出了200股{stock}，當時股價是44.5',
     '我2023/11/28賣出了2手{stock}，賣出價格係$88.35',
-    #TODO: 我的持倉
-    #TODO: 交易記錄
-    #TODO: 盈虧
+    # 我的持倉
+    '我的持倉',
+    '我依家有咩股票係手？',
+    '我2023/12/04的持倉',
+    '我2024/03/19持有甚麼股票',
+    # 交易記錄
+    '交易記錄',
+    '我的買賣記錄',
+    # 盈虧
+    '我的盈虧',
+    '盈虧分析',
 ]
 
 #財經入門
@@ -122,7 +130,7 @@ app = Flask(__name__)
 @app.route('/')
 def index():
     return jsonify({
-        'api': True,
+        'catbot': True,
     })
 
 
@@ -1079,7 +1087,7 @@ def stock_split():
 # localhost:5000/get_index
      
 @app.route('/get_index', methods=['POST'])
-def get_news():
+def get_index():
     json_data = request.json
     symbol = json_data['stock']
     stock_name = yf_to_aa(symbol)
