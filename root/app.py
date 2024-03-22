@@ -22,15 +22,16 @@ with open('stock_ids.json', 'r') as f:
 
 
 sample_stocks = [
-    '騰訊控股',
-    '阿里巴巴－ＳＷ',
-    '盈富基金',
-    '香港交易所',
-    '中國海洋石油',
-    '匯豐控股',
-    '比亞迪股份',
-    '中國移動',
-    '快手－Ｗ',
+    # name, stokc number per hand, price
+    ('騰訊控股', 100, 291),
+    ('阿里巴巴－ＳＷ', 100, 72),
+    ('盈富基金', 500, 17),
+    ('香港交易所', 100, 242),
+    ('中國海洋石油', 1000, 18),
+    ('匯豐控股', 400, 60),
+    ('比亞迪股份', 500, 216),
+    ('中國移動', 500, 66),
+    ('快手－Ｗ', 100, 50),
 ]
 
 sample_qas = [
@@ -56,10 +57,26 @@ sample_qas = [
 
 #股票資料
 stock_info_qs = [
+    # average price
+    '{stock}平均價多少',
     # current price
     '{stock}現價幾多？',
+    # day high
+    '{stock}今日最高係幾多?',
+    # open
+    '{stock}開市價幾多？',
     # previous close
-    '{stock}收市價幾多？',
+    '{stock}昨收幾多？',
+    # price to earnings ratio
+    '{stock}的市盈率',
+    # dividend yield
+    '{stock}的收益率',
+    # ex dividend date
+    '{stock}甚麼時候除淨？',
+    # stock number per hand
+    '{stock}一手幾多股？',
+    # volume
+    '{stock}的成交量是多少？',
 ]
 
 #股票分析
@@ -78,25 +95,25 @@ stock_analysis_qs = [
 
 #我的股票 - 未買入任何股票
 my_stock_input_only_qs = [
-    '我尋日買左1手{stock}，股價係30.0',
-    '我2024/02/21買入了2手{stock}，股價是10.2',
-    '我前日買左100股{stock}，買入價格是$62.25',
-    '我2023/11/19買左2手{stock}，當時價格是4.78',
-    '我2024/01/10買入了200股{stock}，當時股價是14.76',
+    '我尋日買左{hand}手{stock}，股價係{price}',
+    '我{year}/{month}/{day}買入了{hand}手{stock}，股價是{price}',
+    '我前日買左{stock_number}股{stock}，買入價格是${price}',
+    '我{year}/{month}/{day}買左{hand}手{stock}，當時價格是{price}',
+    '我{year}/{month}/{day}買入了{stock_number}股{stock}，當時股價是{price}',
 ]
 
 #我的股票
 my_stock_qs = [
     # input
-    '我尋日買左1手{stock}，股價係70.0',
-    '我2024/02/21買入了2手{stock}，股價是101.2',
-    '我2024/03/12賣出了200股{stock}，當時股價是44.5',
-    '我2023/11/28賣出了2手{stock}，賣出價格係$88.35',
+    '我尋日買左{hand}手{stock}，股價係{price}',
+    '我{year}/{month}/{day}買入了{hand}手{stock}，股價是{price}',
+    '我{year}/{month}/{day}賣出了{stock_number}股{stock}，當時股價是{price}',
+    '我{year}/{month}/{day}賣出了{hand}手{stock}，賣出價格係${price}',
     # 我的持倉
     '我的持倉',
     '我依家有咩股票係手？',
-    '我2023/12/04的持倉',
-    '我2024/03/19持有甚麼股票',
+    '我{year}/{month}/{day}的持倉',
+    '我{year}/{month}/{day}持有甚麼股票',
     # 交易記錄
     '交易記錄',
     '我的買賣記錄',
@@ -150,6 +167,55 @@ def get_new_id():
     return jsonify({
         'userID': str(users_col.insert_one({}).inserted_id),
     })
+
+
+
+
+
+
+# get recommend messages
+# -- parameters --
+# sender: the unique user ID
+# category:
+#   0: 股票資料
+#   1: 股票分析
+#   2: 我的股票
+#   3: 財經入門
+# -- return --
+# a list of recommend messages
+
+# for api test
+# localhost:5000/get_recommend_messages
+# {"sender": "Sender", "category": 3}
+@app.route('/get_recommend_messages', methods=['POST'])
+def get_recommend_messages():
+    json_data = request.json
+    sender = json_data['sender']
+    category = json_data['category']
+
+    recommend_messages = []
+
+    if category == 0:
+        # 股票資料
+        # stock_info_qs
+        ...
+    elif category == 1:
+        # 股票分析
+        # stock_analysis_qs
+        ...
+    elif category == 2:
+        # 我的股票
+        #TODO: check if input any stocks already
+        # my_stock_input_only_qs
+        # my_stock_qs
+        ...
+    else:
+        # 財經入門
+        recommend_messages = [x.replace('{qa}', y) for x, y in zip(random.sample(qa_qs, 3), random.sample(sample_qas, 3))]
+
+    return jsonify(recommend_messages)
+
+
 
 
 
