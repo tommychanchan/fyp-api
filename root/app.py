@@ -1178,7 +1178,17 @@ def get_index():
        
         soup = BeautifulSoup(result, features='html.parser')
         anchor =soup.find('tr',{'class': 'tblM_row firstrow'})
+        index_name=anchor.find('div',{'class':'float_l'}).text.strip()
+        info=anchor.findAll('td',{'class':'txt_r cls'})
+        info[0].text.strip[]=
+        print(info)
+        print(index_name)
+        temp_list=[]    
+        temp_list.append({'index_name':index_name})
         print(anchor)
+        while(anchor.find_next_sibling().find_next_sibling() !=[]):
+            anchor=anchor.find_next_sibling().find_next_sibling()
+            print(anchor)
     except requests.exceptions.ConnectionError as e:
         print(f'ERROR: {e}')
     if not anchor:
@@ -1189,11 +1199,13 @@ def get_index():
 
 
     '''return_list.append({
-    'news_day': news_day, #return a string of the day of the news, none if no news  
-    'news_month': news_month, #return a string of the month of the news, none if no news  
-    'news_year' : news_year,#return a string of the year of the news, none if no news  
-    'news_url': news_url, #return a string of the url of the news, none if no news  
-    'news_title': news_title #return a string of the title of the news, none if no news  
+    'index_name':index_name,
+    'opening_price':opening_price,
+    'change': change, #return a string of the day of the news, none if no news  
+    'change_percent': change_percent, #return a string of the month of the news, none if no news  
+    'turnover' : turnover,#return a string of the year of the news, none if no news  
+    'day_high': day_high, #return a string of the url of the news, none if no news  
+    'day_low': day_low #return a string of the title of the news, none if no news  
     })
     return jsonify(return_list)'''
     return
