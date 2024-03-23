@@ -78,8 +78,12 @@ stock_info_qs = [
     '{stock}的收益率',
     # ex dividend date
     '{stock}甚麼時候除淨？',
+    # market value
+    '{stock}總巿值係幾多',
     # stock number per hand
     '{stock}一手幾多股？',
+    # turnover
+    '{stock}成交金額係幾多',
     # volume
     '{stock}的成交量是多少？',
 ]
@@ -100,20 +104,21 @@ stock_analysis_qs = [
 
 #我的股票 - 未買入任何股票
 my_stock_input_only_qs = [
-    '我尋日買左{hand}手{stock}，股價係{price:.2f}',
+    '我尋日買咗{hand}手{stock}，股價係{price:.2f}',
     '我{year}/{month}/{day}買入了{hand}手{stock}，股價是{price:.2f}',
-    '我前日買左{stock_number}股{stock}，買入時的股價是${price:.2f}',
-    '我{year}/{month}/{day}買左{hand}手{stock}，當時股價是{price:.2f}',
+    '我前日買咗{stock_number}股{stock}，買入時嘅股價係${price:.2f}',
+    '我{year}/{month}/{day}買咗{hand}手{stock}，當時股價係{price:.2f}',
     '我{year}/{month}/{day}買入了{stock_number}股{stock}，當時股價是{price:.2f}',
+    '我今日買咗{hand}手{stock}，股價係{price:.2f}',
 ]
 
 #我的股票
 my_stock_qs = [
     # input
-    '我尋日買左{hand}手{stock}，股價係{price:.2f}',
+    '我尋日買咗{hand}手{stock}，股價係{price:.2f}',
     '我{year}/{month}/{day}買入了{hand}手{stock}，股價是{price:.2f}',
     '我{year}/{month}/{day}賣出了{stock_number}股{stock}，當時股價是{price:.2f}',
-    '我{year}/{month}/{day}賣出了{hand}手{stock}，賣出時嘅股價係${price:.2f}',
+    '我{year}/{month}/{day}賣咗{hand}手{stock}，賣出時嘅股價係${price:.2f}',
     # 我的持倉
     '我的持倉',
     '我依家有咩股票係手？',
