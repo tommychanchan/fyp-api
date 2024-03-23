@@ -118,7 +118,6 @@ my_stock_qs = [
     '我的持倉',
     '我依家有咩股票係手？',
     '我{year}/{month}/{day}的持倉',
-    '我{year}/{month}/{day}持有甚麼股票',
     # 交易記錄
     '交易記錄',
     '我的買賣記錄',
@@ -195,7 +194,7 @@ def get_new_id():
 @app.route('/get_recommend_messages', methods=['POST'])
 def get_recommend_messages():
     json_data = request.json
-    sender = json_data['sender']
+    user_id = json_data['sender']
     category = json_data['category']
 
     recommend_messages = []
@@ -216,12 +215,8 @@ def get_recommend_messages():
         hand = [random.randint(1, 4) for i in range(3)]
         stock_number = [stock[i][1]*hand[i] for i in range(3)]
         price = [stock[i][2]*(1+random.uniform(-0.02, 0.02)) for i in range(3)]
-        #TODO: check if input any stocks already
-        have_record=True
-        if have_record:
-            recommend_messages = [sample.format(stock=stock[i][0], hand=hand[i], stock_number=stock_number[i], price=price[i], year=year[i], month=str(month[i]).zfill(2), day=str(day[i]).zfill(2)) for i, sample in enumerate(random.sample(my_stock_qs, 3))]
-        else:
-            recommend_messages = [sample.format(stock=stock[i][0], hand=hand[i], stock_number=stock_number[i], price=price[i], year=year[i], month=str(month[i]).zfill(2), day=str(day[i]).zfill(2)) for i, sample in enumerate(random.sample(my_stock_input_only_qs, 3))]
+
+        recommend_messages = [sample.format(stock=stock[i][0], hand=hand[i], stock_number=stock_number[i], price=price[i], year=year[i], month=str(month[i]).zfill(2), day=str(day[i]).zfill(2)) for i, sample in enumerate(random.sample(my_stock_qs if len(list(portfolio_col.find({'userID': user_id}))) else my_stock_input_only_qs, 3))]
     else:
         # 財經入門
         recommend_messages = [x.format(qa=y) for x, y in zip(random.sample(qa_qs, 3), random.sample(sample_qas, 3))]
