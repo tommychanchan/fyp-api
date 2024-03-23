@@ -1179,10 +1179,23 @@ def get_index():
         soup = BeautifulSoup(result, features='html.parser')
         anchor =soup.find('tr',{'class': 'tblM_row firstrow'})
         index_name=anchor.find('div',{'class':'float_l'}).text.strip()
+        latest_index_price=float(anchor.find('td',{'class':'txt_r font-b cls'}).text.strip())
         info=anchor.findAll('td',{'class':'txt_r cls'})
-        info[0].text.strip[]=
+        change=float(info[0].text.strip())
+        change_percentage=float(info[1].text.strip().replace('%', ''))
+        turnover=info[2].text.strip().replace(',', '')
+        day_high=float(info[3].text.strip().replace(',', ''))
+        day_low=float(info[4].text.strip().replace(',', ''))
+        weekly_change_percentage=float(anchor.find('td',{'class':'colLast txt_r cls'}).text.strip().replace('%', ''))
         print(info)
         print(index_name)
+        print(latest_index_price)
+        print(change)
+        print(change_percentage)
+        print(turnover)
+        print(day_high)
+        print(day_low)
+        print(weekly_change_percentage)
         temp_list=[]    
         temp_list.append({'index_name':index_name})
         print(anchor)
@@ -1201,11 +1214,13 @@ def get_index():
     '''return_list.append({
     'index_name':index_name,
     'opening_price':opening_price,
+    'latest_index_price':latest_index_price,
     'change': change, #return a string of the day of the news, none if no news  
     'change_percent': change_percent, #return a string of the month of the news, none if no news  
     'turnover' : turnover,#return a string of the year of the news, none if no news  
     'day_high': day_high, #return a string of the url of the news, none if no news  
-    'day_low': day_low #return a string of the title of the news, none if no news  
+    'day_low': day_low, #return a string of the title of the news, none if no news  
+    'weekly_change_percentage':weekly_change
     })
     return jsonify(return_list)'''
     return
