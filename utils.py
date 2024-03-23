@@ -14,6 +14,13 @@ def get_current_date():
 def format_date(date):
     return date.strftime('%Y-%m-%d')
 
+def days_of_month(month):
+    if month == 2:
+        return 28
+    if month in [2, 4, 6, 9, 11]:
+        return 30
+    return 31
+
 
 # convert from:
 # '9988.hk' to '09988'

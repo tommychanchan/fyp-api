@@ -100,20 +100,20 @@ stock_analysis_qs = [
 
 #我的股票 - 未買入任何股票
 my_stock_input_only_qs = [
-    '我尋日買左{hand}手{stock}，股價係{price}',
-    '我{year}/{month}/{day}買入了{hand}手{stock}，股價是{price}',
-    '我前日買左{stock_number}股{stock}，買入價格是${price}',
-    '我{year}/{month}/{day}買左{hand}手{stock}，當時價格是{price}',
-    '我{year}/{month}/{day}買入了{stock_number}股{stock}，當時股價是{price}',
+    '我尋日買左{hand}手{stock}，股價係{price:.2f}',
+    '我{year}/{month}/{day}買入了{hand}手{stock}，股價是{price:.2f}',
+    '我前日買左{stock_number}股{stock}，買入時的股價是${price:.2f}',
+    '我{year}/{month}/{day}買左{hand}手{stock}，當時股價是{price:.2f}',
+    '我{year}/{month}/{day}買入了{stock_number}股{stock}，當時股價是{price:.2f}',
 ]
 
 #我的股票
 my_stock_qs = [
     # input
-    '我尋日買左{hand}手{stock}，股價係{price}',
-    '我{year}/{month}/{day}買入了{hand}手{stock}，股價是{price}',
-    '我{year}/{month}/{day}賣出了{stock_number}股{stock}，當時股價是{price}',
-    '我{year}/{month}/{day}賣出了{hand}手{stock}，賣出價格係${price}',
+    '我尋日買左{hand}手{stock}，股價係{price:.2f}',
+    '我{year}/{month}/{day}買入了{hand}手{stock}，股價是{price:.2f}',
+    '我{year}/{month}/{day}賣出了{stock_number}股{stock}，當時股價是{price:.2f}',
+    '我{year}/{month}/{day}賣出了{hand}手{stock}，賣出時嘅股價係${price:.2f}',
     # 我的持倉
     '我的持倉',
     '我依家有咩股票係手？',
@@ -208,10 +208,20 @@ def get_recommend_messages():
         recommend_messages = [x.format(stock=y[0]) for x, y in zip(random.sample(stock_analysis_qs, 3), random.sample(sample_stocks, 3))]
     elif category == 2:
         # 我的股票
+        today = get_current_date()
+        year = [random.randint(2018, today.year) for i in range(3)]
+        month = [random.randint(1, today.month if year==today.year else 12) for i in range(3)]
+        day = [random.randint(1, today.day if year == today.year and month == today.month else days_of_month(today.month)) for i in range(3)]
+        stock = random.sample(sample_stocks, 3)
+        hand = [random.randint(1, 4) for i in range(3)]
+        stock_number = [stock[i][1]*hand[i] for i in range(3)]
+        price = [stock[i][2]*(1+random.uniform(-0.02, 0.02)) for i in range(3)]
         #TODO: check if input any stocks already
-        # my_stock_input_only_qs
-        # my_stock_qs
-        ...
+        have_record=True
+        if have_record:
+            recommend_messages = [sample.format(stock=stock[i][0], hand=hand[i], stock_number=stock_number[i], price=price[i], year=year[i], month=str(month[i]).zfill(2), day=str(day[i]).zfill(2)) for i, sample in enumerate(random.sample(my_stock_qs, 3))]
+        else:
+            recommend_messages = [sample.format(stock=stock[i][0], hand=hand[i], stock_number=stock_number[i], price=price[i], year=year[i], month=str(month[i]).zfill(2), day=str(day[i]).zfill(2)) for i, sample in enumerate(random.sample(my_stock_input_only_qs, 3))]
     else:
         # 財經入門
         recommend_messages = [x.format(qa=y) for x, y in zip(random.sample(qa_qs, 3), random.sample(sample_qas, 3))]
