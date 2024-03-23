@@ -32,6 +32,11 @@ sample_stocks = [
     ('比亞迪股份', 500, 216),
     ('中國移動', 500, 66),
     ('快手－Ｗ', 100, 50),
+    ('美團－Ｗ', 100, 88),
+    ('建設銀行', 1000, 5),
+    ('小米集團－Ｗ', 200, 15),
+    ('京東集團－ＳＷ', 50, 103),
+    ('友邦保險', 200, 56),
 ]
 
 sample_qas = [
@@ -60,15 +65,15 @@ stock_info_qs = [
     # average price
     '{stock}平均價多少',
     # current price
-    '{stock}現價幾多？',
+    '{stock}現價',
     # day high
-    '{stock}今日最高係幾多?',
+    '{stock}今日最高係幾多？',
     # open
     '{stock}開市價幾多？',
     # previous close
     '{stock}昨收幾多？',
     # price to earnings ratio
-    '{stock}的市盈率',
+    '{stock}嘅市盈率',
     # dividend yield
     '{stock}的收益率',
     # ex dividend date
@@ -126,7 +131,7 @@ my_stock_qs = [
 qa_qs = [
     '甚麼是{qa}？',
     '甚麼是{qa}',
-    '乜野係{qa}？',
+    '乜嘢係{qa}？',
     '咩係{qa}',
     '{qa}是甚麼？',
     '{qa}係咩？',
@@ -197,12 +202,10 @@ def get_recommend_messages():
 
     if category == 0:
         # 股票資料
-        # stock_info_qs
-        ...
+        recommend_messages = [x.format(stock=y[0]) for x, y in zip(random.sample(stock_info_qs, 3), random.sample(sample_stocks, 3))]
     elif category == 1:
         # 股票分析
-        # stock_analysis_qs
-        ...
+        recommend_messages = [x.format(stock=y[0]) for x, y in zip(random.sample(stock_analysis_qs, 3), random.sample(sample_stocks, 3))]
     elif category == 2:
         # 我的股票
         #TODO: check if input any stocks already
@@ -211,7 +214,7 @@ def get_recommend_messages():
         ...
     else:
         # 財經入門
-        recommend_messages = [x.replace('{qa}', y) for x, y in zip(random.sample(qa_qs, 3), random.sample(sample_qas, 3))]
+        recommend_messages = [x.format(qa=y) for x, y in zip(random.sample(qa_qs, 3), random.sample(sample_qas, 3))]
 
     return jsonify(recommend_messages)
 
