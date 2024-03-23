@@ -1179,7 +1179,7 @@ def get_index():
         soup = BeautifulSoup(result, features='html.parser')
         anchor =soup.find('tr',{'class': 'tblM_row firstrow'})
         index_name=anchor.find('div',{'class':'float_l'}).text.strip()
-        latest_index_price=float(anchor.find('td',{'class':'txt_r font-b cls'}).text.strip())
+        latest_index_price=float(anchor.find('td',{'class':'txt_r font-b cls'}).text.strip().replace(',', '').replace('▼', ''))
         info=anchor.findAll('td',{'class':'txt_r cls'})
         change=float(info[0].text.strip())
         change_percentage=float(info[1].text.strip().replace('%', ''))
