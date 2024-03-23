@@ -996,9 +996,6 @@ def stock_split():
      
 @app.route('/get_index', methods=['POST'])
 def get_index():
-    json_data = request.json
-    symbol = json_data['stock']
-    stock_name = yf_to_aa(symbol)
     return_list = []
     result = None
     cookie_list = [
@@ -1012,7 +1009,6 @@ def get_index():
         'Accept-Language': 'en-US,en;q=0.9',
         'Cache-Control': 'max-age=0',
         'Connection': 'keep-alive',
-        'Cookie': random.choice(cookie_list).format(stock_name = stock_name),
         'Host': 'www.aastocks.com',
         'Upgrade-Insecure-Requests': '1',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
@@ -1022,8 +1018,9 @@ def get_index():
             url, timeout=40, headers=headers, verify=False
         ).text
 
+       
         soup = BeautifulSoup(result, features='html.parser')
-        anchor =soup.findAll('tr',{'class': 'tblM_row firstrow'})
+        anchor =soup.find_all('tr',{'class': 'tblM_row firstrow'})
         print(anchor)
     except requests.exceptions.ConnectionError as e:
         print(f'ERROR: {e}')
