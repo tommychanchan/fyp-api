@@ -1178,30 +1178,65 @@ def get_index():
        
         soup = BeautifulSoup(result, features='html.parser')
         anchor =soup.find('tr',{'class': 'tblM_row firstrow'})
-        index_name=anchor.find('div',{'class':'float_l'}).text.strip()
-        latest_index_price=float(anchor.find('td',{'class':'txt_r font-b cls'}).text.strip().replace(',', '').replace('▼', ''))
-        info=anchor.findAll('td',{'class':'txt_r cls'})
-        change=float(info[0].text.strip())
-        change_percentage=float(info[1].text.strip().replace('%', ''))
-        turnover=info[2].text.strip().replace(',', '')
-        day_high=float(info[3].text.strip().replace(',', ''))
-        day_low=float(info[4].text.strip().replace(',', ''))
-        weekly_change_percentage=float(anchor.find('td',{'class':'colLast txt_r cls'}).text.strip().replace('%', ''))
-        print(info)
-        print(index_name)
-        print(latest_index_price)
-        print(change)
-        print(change_percentage)
-        print(turnover)
-        print(day_high)
-        print(day_low)
-        print(weekly_change_percentage)
-        temp_list=[]    
-        temp_list.append({'index_name':index_name})
-        print(anchor)
-        while(anchor.find_next_sibling().find_next_sibling() !=[]):
+        singal=0
+        while(singal==0):
+            index_name=anchor.find('div',{'class':'float_l'}).text.strip()
+            latest_index_price=float(anchor.find('td',{'class':'txt_r font-b cls'}).text.strip().replace(',', '').replace('▼', '').replace('▲',''))
+            info=anchor.findAll('td',{'class':'txt_r cls'})
+            change=float(info[0].text.strip())
+            opening_price=round(latest_index_price-change,2)
+            change_percentage=float(info[1].text.strip().replace('%', ''))
+            turnover=info[2].text.strip().replace(',', '')
+            day_high=float(info[3].text.strip().replace(',', ''))
+            day_low=float(info[4].text.strip().replace(',', ''))
+            weekly_change_percentage=float(anchor.find('td',{'class':'colLast txt_r cls'}).text.strip().replace('%', ''))
+            temp_list=[]    
+            temp_list.append({'index_name':index_name,
+                            "latest_index_price":latest_index_price,
+                            "change":change,
+                            "opening_price":opening_price,
+                            "change_percentage":change_percentage,
+                            "turnover":turnover,
+                            "day_high":day_high,
+                            "day_low":day_low,
+                            "weekly_change_percentage":weekly_change_percentage})
+            return_list.append(temp_list)
             anchor=anchor.find_next_sibling().find_next_sibling()
-            print(anchor)
+            if(index_name== "波幅指數"):
+               singal=1
+        soup = BeautifulSoup(result, features='html.parser')
+        anchor =soup.findAll('tr',{'class': 'tblM_row'})
+        anchor=anchor[10]
+        print(anchor)
+        singal=0
+        while(singal==0):
+            index_name=anchor.find('div',{'class':'jsToolTip'}).text.strip()
+            latest_index_price=float(anchor.find('td',{'class':'txt_r font-b cls'}).text.strip().replace(',', '').replace('▼', '').replace('▲',''))
+            info=anchor.findAll('td',{'class':'txt_r cls'})
+            change=float(info[0].text.strip())
+            opening_price=round(latest_index_price-change,2)
+            change_percentage=float(info[1].text.strip().replace('%', ''))
+            turnover=info[2].text.strip().replace(',', '')
+            day_high=float(info[3].text.strip().replace(',', ''))
+            day_low=float(info[4].text.strip().replace(',', ''))
+            weekly_change_percentage=float(anchor.find('td',{'class':'colLast txt_r cls'}).text.strip().replace('%', ''))
+            temp_list=[]    
+            temp_list.append({'index_name':index_name,
+                            "latest_index_price":latest_index_price,
+                            "change":change,
+                            "opening_price":opening_price,
+                            "change_percentage":change_percentage,
+                            "turnover":turnover,
+                            "day_high":day_high,
+                            "day_low":day_low,
+                            "weekly_change_percentage":weekly_change_percentage})
+            return_list.append(temp_list)
+            anchor=anchor.find_next_sibling().find_next_sibling()
+            if(index_name== "中華博彩業"):
+                singal=1
+    
+           
+        print(return_list)
     except requests.exceptions.ConnectionError as e:
         print(f'ERROR: {e}')
     if not anchor:
@@ -1209,22 +1244,20 @@ def get_index():
         return jsonify({
             'error': 2,
         })
-
-
-    '''return_list.append({
-    'index_name':index_name,
-    'opening_price':opening_price,
-    'latest_index_price':latest_index_price,
-    'change': change, #return a string of the day of the news, none if no news  
-    'change_percent': change_percent, #return a string of the month of the news, none if no news  
-    'turnover' : turnover,#return a string of the year of the news, none if no news  
-    'day_high': day_high, #return a string of the url of the news, none if no news  
-    'day_low': day_low, #return a string of the title of the news, none if no news  
-    'weekly_change_percentage':weekly_change
-    })
-    return jsonify(return_list)'''
-    return
-
+    
+    return jsonify(return_list)
+    '''return_list contain list of various index info, and in this contain 
+    temp_list.append({'index_name':index_name, return a string of the index name 
+                        "latest_index_price":latest_index_price, return a float of latest_index_price
+                        "change":change, return a float of change of index price
+                        "opening_price":opening_price, return a float of opening price
+                        "change_percentage":change_percentage, return a float of change percentage that omit % sign
+                        "turnover":turnover, return a string of turnover, which can consist 億,千萬	at the end of the string
+                        "day_high":day_high,return a float of daily high
+                        "day_low":day_low, return a float of daily low 
+                        "weekly_change_percentage":weekly_change_percentage return a float of weekly change percentage that omit % sign
+                        })
+    ''' 
 # get latest news
 # -- parameters --
 # stock: stock id (e.g. "9988.hk"/"0008.hk")
