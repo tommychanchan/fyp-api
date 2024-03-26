@@ -1204,7 +1204,7 @@ def get_index():
             day_low=float(info[4].text.strip().replace(',', ''))
             weekly_change_percentage=float(anchor.find('td',{'class':'colLast txt_r cls'}).text.strip().replace('%', ''))
             temp_list=[]    
-            temp_list.append({'index_name':index_name,
+            temp_list.append('index_name':index_name,
                             "latest_index_price":latest_index_price,
                             "change":change,
                             "opening_price":opening_price,
@@ -1212,7 +1212,7 @@ def get_index():
                             "turnover":turnover,
                             "day_high":day_high,
                             "day_low":day_low,
-                            "weekly_change_percentage":weekly_change_percentage})
+                            "weekly_change_percentage":weekly_change_percentage)
             return_list.append(temp_list)
             anchor=anchor.find_next_sibling().find_next_sibling()
             if(index_name== "波幅指數"):
@@ -1234,7 +1234,7 @@ def get_index():
             day_low=float(info[4].text.strip().replace(',', ''))
             weekly_change_percentage=float(anchor.find('td',{'class':'colLast txt_r cls'}).text.strip().replace('%', ''))
             temp_list=[]    
-            temp_list.append({'index_name':index_name,
+            temp_list.append('index_name':index_name,
                             "latest_index_price":latest_index_price,
                             "change":change,
                             "opening_price":opening_price,
@@ -1242,7 +1242,7 @@ def get_index():
                             "turnover":turnover,
                             "day_high":day_high,
                             "day_low":day_low,
-                            "weekly_change_percentage":weekly_change_percentage})
+                            "weekly_change_percentage":weekly_change_percentage)
             return_list.append(temp_list)
             anchor=anchor.find_next_sibling().find_next_sibling()
             if(index_name== "中華博彩業"):
