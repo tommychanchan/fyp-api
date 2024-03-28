@@ -1271,6 +1271,12 @@ def get_index():
                         "weekly_change_percentage":weekly_change_percentage return a float of weekly change percentage that omit % sign
                         })
     ''' 
+
+
+
+
+
+
 # get latest news
 # -- parameters --
 # stock: stock id (e.g. "9988.hk"/"0008.hk")
@@ -1278,16 +1284,20 @@ def get_index():
 # a list of date(string), time(string), url(string), and title(string) of the stock of last 3 days
 # if no news, empty list will be returned
 # -- error messages --
-# 1: cannot connect to server
+# 1: cannot connect to AASTOCKS web page
 # 2: stock id not found
 
 # for api test
 # localhost:5000/get_news
 # {"stock": "9988.hk"}
+# {"stock": "9988.hk", "days": 1}
 @app.route('/get_news', methods=['POST'])
 def get_news():
     json_data = request.json
     symbol = json_data['stock']
+    days = json_data['days']
+    days = days if days else 2
+    print(symbol)
     stock_name = yf_to_aa(symbol)
 
     if not symbol in STOCK_IDS:
@@ -1340,7 +1350,7 @@ def get_news():
             })
         for datum in data:
             datum_date = datum.get('dt')[:10].replace('/', '-')
-            stop_date = format_date(get_current_date() + datetime.timedelta(days=-2))
+            stop_date = format_date(get_current_date() + datetime.timedelta(days=-(days-1)))
             if datum_date >= stop_date:
                 news_url = f"http://www.aastocks.com/tc/stocks/analysis/stock-aafn-con/{stock_name}/{datum.get('s')}/{datum.get('id')}/hk-stock-news"
                 return_list.append({
